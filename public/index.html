@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PinForge – STM32 Simulator</title>
+<style>
+:root{box-sizing:border-box;color-scheme:dark;--bg:#0f1419;--pn:#161c24;--pn2:#121920;--tx:#d7dde4;--mu:#8a97a8;--bd:#263040;--bl:#2f6fed;--gr:#1fa85a;--rd:#d64545;--ac:#3ddc97;--gridc:#1b2430}
+html,body{height:100%}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.45 Inter,system-ui,Segoe UI,Roboto,sans-serif;display:flex;flex-direction:column;height:100dvh;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+button,select,input{font:inherit;color:inherit}
+#top{display:flex;align-items:center;gap:8px;padding:0 12px;height:52px;background:var(--pn);border-bottom:1px solid var(--bd);flex:none}
+.logo{font-size:15px;letter-spacing:.3px;margin-right:6px}.logo span{color:var(--ac)}
+#top select,.gh{height:32px;background:var(--bg);border:1px solid #2c384a;border-radius:7px;padding:0 10px;cursor:pointer;max-width:220px}
+.sp{flex:1}
+.btn{display:flex;align-items:center;gap:7px;height:34px;padding:0 14px;border:0;border-radius:7px;color:#fff;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.4;cursor:not-allowed}.btn.blue{background:var(--bl)}.btn.green{background:var(--gr)}.btn.red{background:var(--rd)}
+.chip{padding:3px 10px;border-radius:99px;font-size:12px;white-space:nowrap;background:#1c2a3f;color:#7fb0ff}.chip.run{background:#10332d;color:#7ee2c0}.chip.warn{background:#3a2f12;color:#f0c76a}.chip.ok{background:#14301f;color:#7ee2a8}.chip.err{background:#3a1717;color:#ff9a9a}
+#views{display:flex;align-items:center;gap:2px;padding:0 10px;background:var(--pn2);border-bottom:1px solid var(--bd);flex:none;height:38px}
+.tb{padding:0 14px;height:38px;background:none;border:0;color:var(--mu);cursor:pointer}.tb.a{color:var(--tx);box-shadow:inset 0 -2px var(--ac)}
+#work{flex:1;display:flex;min-height:0}
+#codePane,#circPane{display:flex;flex-direction:column;min-width:0;min-height:0}
+#codePane{flex:0 0 42%;border-right:1px solid var(--bd)}#circPane{flex:1;position:relative}
+#work[data-v=code] #circPane{display:none}#work[data-v=circuit] #codePane{display:none}#work[data-v=code] #codePane{flex:1;border:0}
+.ftabs{display:flex;background:var(--pn);color:var(--mu);flex:none}.ftabs span{padding:8px 14px;cursor:pointer}.ftabs span.a{color:var(--tx);box-shadow:inset 0 -2px var(--ac)}
+#note{padding:5px 12px;font-size:11px;color:var(--mu);background:var(--pn2);border-bottom:1px solid var(--bd);flex:none}
+.ed{flex:1;display:flex;min-height:0;background:var(--bg)}
+#gut{margin:0;padding:12px 8px 12px 12px;text-align:right;color:#5b6a7c;font:13px/20px ui-monospace,Menlo,Consolas,monospace;overflow:hidden;user-select:none}
+.cw{position:relative;flex:1;min-width:0}
+#hl,#code{position:absolute;inset:0;margin:0;padding:12px;font:13px/20px ui-monospace,Menlo,Consolas,monospace;white-space:pre;tab-size:2;border:0;outline:0}
+#hl{overflow:hidden;pointer-events:none}#code{background:transparent;color:transparent;caret-color:#fff;resize:none;overflow:auto;z-index:1}#code::selection{background:#264f78}
+.c1{color:#6a9955}.c2{color:#ce9178}.c3{color:#569cd6}.c4{color:#dcdcaa}.c5{color:#4ec9b0}.c6{color:#b5cea8}
+#cwrap{flex:1;position:relative;min-height:0;overflow:hidden;background-image:linear-gradient(var(--gridc) 1px,transparent 1px),linear-gradient(90deg,var(--gridc) 1px,transparent 1px);background-size:20px 20px;background-color:#0e1319}
+#cv{width:100%;height:100%;display:block;touch-action:none}
+#lockb{display:none;position:absolute;top:10px;right:10px;align-items:center;gap:8px;padding:7px 12px;border-radius:99px;background:#10332dee;color:#7ee2c0;font-size:12px;pointer-events:none}
+#circPane.locked #lockb{display:flex}
+#lockb .lk{display:inline}#hint{position:absolute;left:12px;bottom:10px;color:#6b7a8f;font-size:12px;pointer-events:none}#circPane.locked #hint{display:none}
+#plus{position:absolute;right:16px;bottom:16px;width:48px;height:48px;border-radius:99px;border:0;background:var(--bl);color:#fff;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 4px 14px #0008}
+#plus:disabled{background:#2a3647;color:#6b7a8f;cursor:not-allowed;box-shadow:none}
+#pmenu{display:none;position:absolute;right:16px;bottom:72px;width:240px;background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:8px;box-shadow:0 8px 24px #000a;z-index:5}
+#pmenu.on{display:block}#q{width:100%;padding:7px 9px;margin-bottom:6px;background:var(--bg);border:1px solid #2c384a;border-radius:7px}
+#pl button{display:flex;justify-content:space-between;width:100%;background:none;border:0;padding:8px 9px;border-radius:6px;cursor:pointer;text-align:left}#pl button:hover{background:var(--bl)}#pl span{color:var(--mu);font-size:11px}
+#insp{flex:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 12px;background:var(--pn);border-top:1px solid var(--bd);color:var(--mu);font-size:12px;min-height:42px}
+#insp b{color:var(--tx)}#insp select,#insp input[type=number]{background:var(--bg);border:1px solid #2c384a;border-radius:6px;padding:3px 6px}
+#insp button{background:#243041;border:0;border-radius:6px;padding:5px 10px;cursor:pointer}#insp button:disabled{opacity:.4;cursor:not-allowed}#insp button.sw{width:20px;height:20px;padding:0;border:2px solid #0006;border-radius:99px}
+#dock{flex:none;height:230px;display:flex;flex-direction:column;background:#0a0e13;border-top:1px solid var(--bd)}#dock.min{height:38px}
+#dtabs{display:flex;align-items:center;background:var(--pn2);border-bottom:1px solid var(--bd);flex:none;overflow-x:auto}
+#dock.min #dp{display:none}#dp{flex:1;min-height:0;position:relative}
+.dpane{display:none;position:absolute;inset:0;overflow:auto}.dpane.a{display:flex;flex-direction:column}
+#con{flex:1;overflow:auto;padding:8px 12px;font:12px/1.55 ui-monospace,monospace;color:#7ee2a8;white-space:pre-wrap}
+#sr{display:flex;border-top:1px solid var(--bd);flex:none}#si{flex:1;background:transparent;border:0;padding:7px 12px;font:12px ui-monospace,monospace;outline:0}#sr button{background:#243041;border:0;padding:0 14px;cursor:pointer}
+#regs,#blog{margin:0;padding:10px 14px;font:12px/1.65 ui-monospace,monospace;color:#9fb6d6;white-space:pre}#blog{color:#a9c4a9;white-space:pre-wrap}
+#laTools{display:flex;gap:10px;align-items:center;padding:5px 12px;color:var(--mu);font-size:12px;flex:none}#la{flex:1;width:100%;min-height:0;display:block}
+#status{display:flex;align-items:center;gap:18px;padding:0 12px;height:26px;background:#1b2330;color:var(--mu);font-size:12px;flex:none;overflow:hidden;white-space:nowrap}
+.pin{cursor:crosshair}.pin:hover{stroke:#fff;stroke-width:2}
+#circPane.locked .pin{cursor:not-allowed}
+@media(max-width:900px){#lockb .lk{display:none}#lockb{top:6px;right:6px;padding:5px 10px}#codePane{flex:1}#top{height:auto;flex-wrap:wrap;padding:6px 8px;row-gap:6px;column-gap:6px}#top .sp{display:none}.logo{order:0;margin-right:auto}#bBuild,#bRun,#bStop{order:1;min-width:46px;height:40px;justify-content:center;padding:0 12px}.btn span.lb{display:none}#ex{order:2;flex:1;min-width:0;max-width:none}#ld{order:2}#chipBuild{order:3}#chipMode{display:none}#dock{height:34vh}#vsplit{display:none}.hideS{display:none}#plus{width:52px;height:52px}#insp{font-size:12px}}
+html,body{overflow-x:hidden}
+</style></head><body>
+<header id="top"><b class="logo">Pin<span>Forge</span></b>
+<select id="ex" title="Project / example"></select><button class="gh" id="ld" title="Load a .bin, .elf or .hex">Load…</button><input type="file" id="fl" accept=".bin,.elf,.hex" hidden>
+<span class="sp"></span><span class="chip" id="chipMode">Edit mode</span><span class="chip" id="chipBuild">Ready</span>
+<button class="btn blue" id="bBuild" title="Compile main.c (Ctrl+B)"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 14l6-6M7 3l6 6-2 2-6-6z" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lb">Build</span></button>
+<button class="btn green" id="bRun" title="Run the last build (Ctrl+Enter)"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2l9 6-9 6z" fill="#fff"/></svg><span class="lb">Run</span></button>
+<button class="btn red" id="bStop" disabled title="Stop the simulation"><svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h10v10H3z" fill="#fff"/></svg><span class="lb">Stop</span></button></header>
+<nav id="views"><button class="tb a" data-v="split" id="vsplit">Split</button><button class="tb" data-v="code">Code</button><button class="tb" data-v="circuit">Circuit</button><span class="sp"></span><span id="tm" class="hideS" style="font:12px ui-monospace,monospace;color:var(--mu)">00:00.000</span></nav>
+<main id="work" data-v="split">
+<section id="codePane"><div class="ftabs"><span class="a" data-f="c">main.c</span><span data-f="json">diagram.json</span></div><div id="note"></div>
+<div class="ed"><pre id="gut"></pre><div class="cw"><pre id="hl"></pre><textarea id="code" spellcheck="false" autocapitalize="off" aria-label="Code editor"></textarea></div></div></section>
+<section id="circPane"><div id="cwrap"><svg id="cv" viewBox="0 0 560 520" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Circuit canvas"></svg>
+<div id="lockb"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 7h8v7H4zM6 7V5a2 2 0 0 1 4 0v2" stroke="#7ee2c0" stroke-width="1.5" fill="none"/></svg>Circuit locked while running<span class="lk"> · press Stop to edit</span></div>
+<div id="hint">Click a pin, then another pin to wire · wires snap to the 20 px grid</div>
+<div id="pmenu"><input id="q" placeholder="Search parts…" autocomplete="off" aria-label="Search parts"><div id="pl"></div></div>
+<button id="plus" title="Add a part" aria-label="Add a part">+</button></div><div id="insp"></div></section></main>
+<section id="dock"><div id="dtabs"><button class="tb a" data-d="serial">Serial Monitor</button><button class="tb" data-d="regs">CPU Registers</button><button class="tb" data-d="logic">Logic Analyzer</button><button class="tb" data-d="build">Build Log</button><span class="sp"></span><button class="tb" id="dmin" title="Collapse / expand">&#9662;</button></div>
+<div id="dp"><div class="dpane a" id="p-serial"><div id="con"></div><div id="sr"><input id="si" placeholder="Send to Serial (USART1)…" autocomplete="off"><button id="sb">Send</button></div></div>
+<div class="dpane" id="p-regs"><pre id="regs">Not running.</pre></div>
+<div class="dpane" id="p-logic"><div id="laTools"><span>Window</span><select id="laWin"><option value="0.5">0.5 s</option><option value="2" selected>2 s</option><option value="10">10 s</option></select><span id="laInfo"></span></div><canvas id="la"></canvas></div>
+<div class="dpane" id="p-build"><pre id="blog">No build yet.</pre></div></div></section>
+<footer id="status"><span id="stChip">STM32F103C8 · 8 MHz</span><span id="stFlash">Flash –</span><span class="sp"></span><span id="stRun">Stopped</span></footer>
+<script>
+/* PinForge Cortex-M3 + STM32F103 emulator */
+function CM3(host){
+ const T=this;T.host=host||{};
+ T.r=new Int32Array(16);T.N=T.Z=T.C=T.V=0;T.it=0;T.ipsr=0;T.primask=0;T.cy=0;T.halted=null;
+ T.flash=new Uint8Array(65536);T.ram=new Uint8Array(20480);
+ T.pend=[];T.nvEn=[0,0,0];T.nvPend=[0,0,0];T.ipr=new Uint8Array(96);T.shp=new Uint8Array(12);T.act=[];
+ T.st={ctrl:0,load:0,val:0,flag:0,acc:0};
+ T.rcc={cr:0x83,cfgr:0,apb2:0,apb1:0,ahb:0x14};
+ T.gp=[0,1,2].map(()=>({crl:0x44444444,crh:0x44444444,odr:0}));
+ T.afio={exticr:[0,0,0,0],mapr:0};
+ T.exti={imr:0,emr:0,rtsr:0,ftsr:0,pr:0};T.lastIn=new Array(16).fill(-1);
+ T.us=[0,1,2].map(()=>({sr:0xC0,dr:0,brr:0,cr1:0,cr2:0,cr3:0,rx:[]}));
+ T.adc={sr:0,cr1:0,cr2:0,sqr3:0,dr:0,smpr1:0,smpr2:0,sqr1:0,sqr2:0};
+ T.tim=[0,1,2].map(()=>({cr1:0,psr:0,arr:0xFFFF,cnt:0,sr:0,dier:0,acc:0,ccr:[0,0,0,0],ccmr1:0,ccmr2:0,ccer:0}));
+ T.gate=[0x4,0x8,0x10];
+ T.reset=function(){T.r.fill(0);T.N=T.Z=T.C=T.V=0;T.it=0;T.ipsr=0;T.halted=null;T.cy=0;T.pend=[];T.act=[];T.ipr.fill(0);T.shp.fill(0);
+  T.r[13]=T.rd32(0x08000000)|0;T.r[15]=T.rd32(0x08000004)&~1;T.r[14]=-1;
+  T.st={ctrl:0,load:0,val:0,flag:0,acc:0};T.rcc={cr:0x83,cfgr:0,apb2:0,apb1:0,ahb:0x14};T.ram.fill(0);
+  T.gp.forEach(g=>{g.crl=g.crh=0x44444444;g.odr=0});T.shadow.forEach(x=>x.fill(-1));T.exti={imr:0,emr:0,rtsr:0,ftsr:0,pr:0};T.nvEn=[0,0,0];T.nvPend=[0,0,0];
+  T.us.forEach(u=>{u.sr=0xC0;u.cr1=0;u.rx=[]});T.tim.forEach(t=>{t.cr1=0;t.cnt=0;t.sr=0;t.dier=0;t.acc=0;t.ccr=[0,0,0,0];t.ccmr1=t.ccmr2=t.ccer=0;t.arr=0xFFFF;t.psr=0});
+  T.adc={sr:0,cr1:0,cr2:0,sqr3:0,dr:0,smpr1:0,smpr2:0,sqr1:0,sqr2:0};T.lastIn.fill(-1);
+  for(let p=0;p<3;p++)T.gpioSync(p)};
+ T.load=function(bytes,addr){T.flash.fill(0xFF);for(let i=0;i<bytes.length;i++){const a=(addr||0x08000000)+i-0x08000000;if(a>=0&&a<65536)T.flash[a]=bytes[i]}};
+ // ---- memory
+ T.rd=function(a,n){a>>>=0;
+  if(a>=0x20000000&&a<0x20005000){const o=a-0x20000000;return n==4?(T.ram[o]|T.ram[o+1]<<8|T.ram[o+2]<<16|T.ram[o+3]<<24)>>>0:n==2?T.ram[o]|T.ram[o+1]<<8:T.ram[o]}
+  if((a>=0x08000000&&a<0x08010000)||a<0x10000){const o=a&0xFFFF;return n==4?(T.flash[o]|T.flash[o+1]<<8|T.flash[o+2]<<16|T.flash[o+3]<<24)>>>0:n==2?T.flash[o]|T.flash[o+1]<<8:T.flash[o]}
+  if(a>=0x40000000||a>=0xE0000000)return T.prd(a,n);
+  T.fault('Bus fault: read from 0x'+a.toString(16));return 0};
+ T.wr=function(a,n,v){a>>>=0;
+  if(a>=0x20000000&&a<0x20005000){const o=a-0x20000000;T.ram[o]=v;if(n>1){T.ram[o+1]=v>>8;if(n>2){T.ram[o+2]=v>>16;T.ram[o+3]=v>>24}}return}
+  if(a>=0x40000000||a>=0xE0000000){T.pwr(a,n,v>>>0);return}
+  if((a>=0x08000000&&a<0x08010000)||a<0x10000)return;
+  T.fault('Bus fault: write to 0x'+a.toString(16))};
+ T.rd32=a=>T.rd(a,4);T.fault=m=>{if(!T.halted)T.halted=m};
+ // ---- pending / NVIC
+ T.prio=function(e){if(e==1)return-3;if(e==2)return-2;if(e==3)return-1;return e<16?T.shp[e-4]&0xF0:T.ipr[e-16]&0xF0};
+ T.level=function(){const e=T.exti,m=e.pr&e.imr;if(m)for(let l=0;l<16;l++)if((m>>l)&1)T.irq(l<5?6+l:l<10?23:40);
+  for(let i=0;i<3;i++){const t=T.tim[i];if(t.sr&t.dier&0x1F)T.irq(28+i);const u=T.us[i];if((u.cr1&0x2000)&&(((u.cr1&0x20)&&u.rx.length)||(u.cr1&0x80)||((u.cr1&0x40)&&(u.sr&0x40))))T.irq(37+i)}
+  if((T.adc.sr&2)&&(T.adc.cr1&0x20))T.irq(18)};
+ T.raise=function(exc){if(!T.pend.includes(exc))T.pend.push(exc)};
+ T.irq=function(n){const w=n>>5,b=1<<(n&31);T.nvPend[w]|=b;};
+ T.checkIrq=function(){for(let w=0;w<3;w++){const m=(T.nvPend[w]&T.nvEn[w])>>>0;if(m){const b=31-Math.clz32(m&-m);T.nvPend[w]&=~(1<<b);T.raise(16+w*32+b)}}};
+ // ---- GPIO
+ T.shadow=[0,1,2].map(()=>new Int32Array(16).fill(-1));
+ T.gpioSync=function(p){if(!T.host.gpio)return;const g=T.gp[p],en=(T.rcc.apb2&T.gate[p])!=0,sh=T.shadow[p];
+  for(let i=0;i<16;i++){const cfg=(i<8?g.crl>>>(i*4):g.crh>>>((i-8)*4))&15,odr=(g.odr>>i)&1,key=en?(cfg|(odr<<4)|32):0;
+   if(sh[i]!==key){sh[i]=key;T.host.gpio(p,i,en?{mode:cfg&3,cnf:cfg>>2,odr}:{mode:0,cnf:1,odr:0})}}};
+ T.pinIn=function(p,i){const g=T.gp[p],cfg=(i<8?g.crl>>>(i*4):g.crh>>>((i-8)*4))&15;if(cfg&3)return(g.odr>>i)&1;return T.host.readPin?T.host.readPin(p,i,cfg>>2,(g.odr>>i)&1):0};
+ T.prd=function(a,n){
+  if(a>=0xE000E010&&a<=0xE000E01C){const s=T.st;if(a==0xE000E010){const v=s.ctrl|(s.flag<<16);s.flag=0;return v}if(a==0xE000E014)return s.load;if(a==0xE000E018)return s.val;return 0}
+  if(a>=0xE000E400&&a<0xE000E460){let v=0;for(let i=0;i<n;i++)v|=T.ipr[a-0xE000E400+i]<<(8*i);return v>>>0}
+  if(a>=0xE000ED18&&a<0xE000ED24){let v=0;for(let i=0;i<n;i++)v|=T.shp[a-0xE000ED18+i]<<(8*i);return v>>>0}
+  if(a>=0xE000E100&&a<0xE000E10C)return T.nvEn[(a-0xE000E100)>>2];
+  if(a>=0xE000E200&&a<0xE000E20C)return T.nvPend[(a-0xE000E200)>>2];
+  if(a==0xE000ED00)return 0x411FC231;
+  if(a>=0x40021000&&a<0x40021400){const o=a-0x40021000;return o==0?T.rcc.cr|((T.rcc.cr&1)<<1)|(((T.rcc.cr>>16)&1)<<17)|(((T.rcc.cr>>24)&1)<<25):o==4?(T.rcc.cfgr&~0xC)|((T.rcc.cfgr&3)<<2):o==0x14?T.rcc.ahb:o==0x18?T.rcc.apb2:o==0x1C?T.rcc.apb1:o==0x24?0x0C000000:0}
+  if(a>=0x40010800&&a<0x40011400){const p=(a-0x40010800)>>10,o=(a-0x40010800)&0x3FF,g=T.gp[p];if(!(T.rcc.apb2&T.gate[p]))return 0;
+   if(o==0)return g.crl>>>0;if(o==4)return g.crh>>>0;if(o==8){let v=0;for(let i=0;i<16;i++)v|=T.pinIn(p,i)<<i;return v}if(o==12)return g.odr;return 0}
+  if(a>=0x40010000&&a<0x40010400){const o=a&0xFF;return o==4?T.afio.mapr:o>=8&&o<=0x14?T.afio.exticr[(o-8)>>2]:0}
+  if(a>=0x40010400&&a<0x40010800){const o=a&0xFF,e=T.exti;return o==0?e.imr:o==4?e.emr:o==8?e.rtsr:o==0xC?e.ftsr:o==0x14?e.pr:0}
+  const ui=a==0x40013800?0:a==0x40004400?1:a==0x40004800?2:-1,ua=a&~0x3FF;
+  if(ui>=0||ua==0x40013800||ua==0x40004400||ua==0x40004800){const k=ua==0x40013800?0:ua==0x40004400?1:2,u=T.us[k],o=a&0x3FF;
+   if(o==0)return(u.sr&~0x20)|(u.rx.length?0x20:0);if(o==4){return u.rx.length?u.rx.shift():0}if(o==8)return u.brr;if(o==0xC)return u.cr1;if(o==0x10)return u.cr2;if(o==0x14)return u.cr3;return 0}
+  if(a>=0x40012400&&a<0x40012800){const o=a&0x3FF,d=T.adc;return o==0?d.sr:o==4?d.cr1:o==8?d.cr2:o==0x34?d.sqr3:o==0x4C?(d.sr&=~2,d.dr):o==0x10?d.smpr2:0}
+  const tb=a&~0x3FF,ti=tb==0x40000000?0:tb==0x40000400?1:tb==0x40000800?2:-1;
+  if(ti>=0){const o=a&0x3FF,t=T.tim[ti];return o==0?t.cr1:o==0xC?t.dier:o==0x10?t.sr:o==0x24?t.cnt:o==0x28?t.psr:o==0x2C?t.arr:o==0x34?t.ccr[0]:o==0x38?t.ccr[1]:o==0x3C?t.ccr[2]:o==0x40?t.ccr[3]:o==0x18?t.ccmr1:o==0x1C?t.ccmr2:o==0x20?t.ccer:0}
+  return 0};
+ T.pwr=function(a,n,v){
+  if(a>=0xE000E010&&a<=0xE000E01C){const s=T.st;if(a==0xE000E010)s.ctrl=v&7;else if(a==0xE000E014)s.load=v&0xFFFFFF;else if(a==0xE000E018){s.val=0;s.flag=0}return}
+  if(a>=0xE000E400&&a<0xE000E460){for(let i=0;i<n;i++)T.ipr[a-0xE000E400+i]=(v>>>(8*i))&255;return}
+  if(a>=0xE000ED18&&a<0xE000ED24){for(let i=0;i<n;i++)T.shp[a-0xE000ED18+i]=(v>>>(8*i))&255;return}
+  if(a>=0xE000E100&&a<0xE000E10C){T.nvEn[(a-0xE000E100)>>2]|=v;return}
+  if(a>=0xE000E180&&a<0xE000E18C){T.nvEn[(a-0xE000E180)>>2]&=~v;return}
+  if(a>=0xE000E200&&a<0xE000E20C){T.nvPend[(a-0xE000E200)>>2]|=v;return}
+  if(a>=0xE000E280&&a<0xE000E28C){T.nvPend[(a-0xE000E280)>>2]&=~v;return}
+  if(a==0xE000ED04){if(v&(1<<28))T.raise(14);return}
+  if(a>=0x40021000&&a<0x40021400){const o=a-0x40021000,c=T.rcc;if(o==0)c.cr=v;else if(o==4)c.cfgr=v;else if(o==0x14)c.ahb=v;else if(o==0x18){c.apb2=v;for(let p=0;p<3;p++)T.gpioSync(p)}else if(o==0x1C)c.apb1=v;return}
+  if(a>=0x40010800&&a<0x40011400){const p=(a-0x40010800)>>10,o=(a-0x40010800)&0x3FF,g=T.gp[p];if(!(T.rcc.apb2&T.gate[p]))return;
+   if(o==0)g.crl=v;else if(o==4)g.crh=v;else if(o==12)g.odr=v&0xFFFF;else if(o==0x10)g.odr=((g.odr|(v&0xFFFF))&~(v>>>16))&0xFFFF;else if(o==0x14)g.odr&=~(v&0xFFFF);else return;T.gpioSync(p);return}
+  if(a>=0x40010000&&a<0x40010400){const o=a&0xFF;if(o==4)T.afio.mapr=v;else if(o>=8&&o<=0x14)T.afio.exticr[(o-8)>>2]=v;return}
+  if(a>=0x40010400&&a<0x40010800){const o=a&0xFF,e=T.exti;if(o==0){e.imr=v;T.level()}else if(o==4)e.emr=v;else if(o==8)e.rtsr=v;else if(o==0xC)e.ftsr=v;else if(o==0x10){e.pr|=v&e.imr;T.level()}else if(o==0x14)e.pr&=~v;return}
+  const ua=a&~0x3FF;
+  if(ua==0x40013800||ua==0x40004400||ua==0x40004800){const k=ua==0x40013800?0:ua==0x40004400?1:2,u=T.us[k],o=a&0x3FF;
+   if(o==4){if(u.cr1&8&&u.cr1&0x2000){if(T.host.serial)T.host.serial(k,v&0xFF)}}else if(o==8)u.brr=v;else if(o==0xC){u.cr1=v;T.level()}else if(o==0x10)u.cr2=v;else if(o==0x14)u.cr3=v;else if(o==0)u.sr=(u.sr&~0x20)|(v&0x20)|0xC0;return}
+  if(a>=0x40012400&&a<0x40012800){const o=a&0x3FF,d=T.adc;
+   if(o==4){d.cr1=v;T.level()}else if(o==8){d.cr2=v&~(1<<2)&~(1<<3);if((v&1)&&(v&(1<<22))){const ch=d.sqr3&31;d.dr=T.host.analog?T.host.analog(ch)&0xFFF:0;d.sr|=2;d.cr2&=~(1<<22);T.level()}}else if(o==0)d.sr=v;else if(o==0x34)d.sqr3=v;else if(o==0x10)d.smpr2=v;return}
+  const tb=a&~0x3FF,ti=tb==0x40000000?0:tb==0x40000400?1:tb==0x40000800?2:-1;
+  if(ti>=0){const o=a&0x3FF,t=T.tim[ti];if(o==0)t.cr1=v;else if(o==0xC){t.dier=v;T.level()}else if(o==0x10)t.sr&=v;else if(o==0x14){if(v&1){t.cnt=0;t.sr|=1}}else if(o==0x24)t.cnt=v&0xFFFF;else if(o==0x28)t.psr=v&0xFFFF;else if(o==0x2C)t.arr=v&0xFFFF;
+   else if(o==0x34)t.ccr[0]=v&0xFFFF;else if(o==0x38)t.ccr[1]=v&0xFFFF;else if(o==0x3C)t.ccr[2]=v&0xFFFF;else if(o==0x40)t.ccr[3]=v&0xFFFF;else if(o==0x18)t.ccmr1=v;else if(o==0x1C)t.ccmr2=v;else if(o==0x20)t.ccer=v;
+   T.pwmSync(ti)}};
+ const TP=[[[0,0],[0,1],[0,2],[0,3]],[[0,6],[0,7],[1,0],[1,1]],[[1,6],[1,7],[1,8],[1,9]]];
+ T.pwmSync=function(ti){if(!T.host.pwm)return;const t=T.tim[ti];for(let c=0;c<4;c++){const m=c<2?t.ccmr1>>(c*8+4)&7:t.ccmr2>>((c-2)*8+4)&7,en=(t.ccer>>(c*4))&1;
+  T.host.pwm(TP[ti][c][0],TP[ti][c][1],(en&&(m==6||m==7)&&(t.cr1&1))?Math.min(1,t.ccr[c]/(t.arr+1)):null)}};
+ T.extiIrq=function(){const e=T.exti;for(let l=0;l<16;l++)if((e.pr>>l)&1){T.irq(l<5?6+l:l<10?23:40)}};
+ T.setPin=function(){
+  for(let i=0;i<16;i++){const sel=(T.afio.exticr[i>>2]>>((i&3)*4))&15;if(sel>2)continue;const g=T.gp[sel],cfg=(i<8?g.crl>>>(i*4):g.crh>>>((i-8)*4))&15;
+   if(cfg&3){T.lastIn[i]=-1;continue}const v=T.host.readPin?T.host.readPin(sel,i,cfg>>2,(g.odr>>i)&1):0;
+   if(T.lastIn[i]>=0&&T.lastIn[i]!=v){const e=T.exti;if(((e.rtsr>>i)&1&&v)||((e.ftsr>>i)&1&&!v)){if((e.imr>>i)&1){e.pr|=1<<i;T.irq(i<5?6+i:i<10?23:40)}}}T.lastIn[i]=v}};
+ T.rxByte=function(k,c){T.us[k].rx.push(c&0xFF);T.level()};
+ // ---- time
+ T.adv=function(c){T.cy+=c;const s=T.st;
+  if(s.ctrl&1){s.acc+=c;const div=(s.ctrl&4)?1:8;while(s.acc>=div){s.acc-=div;if(s.val==0)s.val=s.load;else{s.val--;if(s.val==0){s.flag=1;if(s.ctrl&2)T.raise(15)}}}}
+  for(let i=0;i<3;i++){const t=T.tim[i];if(t.cr1&1){t.acc+=c;const d=t.psr+1;while(t.acc>=d){t.acc-=d;if(t.cnt>=t.arr){t.cnt=0;t.sr|=1;if(t.dier&1)T.irq(28+i)}else t.cnt++;for(let k=0;k<4;k++)if(t.cnt==t.ccr[k]){t.sr|=2<<k;if(t.dier&(2<<k))T.irq(28+i)}}}}};
+ // ---- exceptions
+ T.xpsr=()=>((T.N<<31)|(T.Z<<30)|(T.C<<29)|(T.V<<28)|(1<<24)|((T.it&3)<<25)|((T.it>>2)<<10)|T.ipsr)>>>0;
+ T.setx=function(x){T.N=x>>>31;T.Z=(x>>>30)&1;T.C=(x>>>29)&1;T.V=(x>>>28)&1;T.it=((x>>>25)&3)|(((x>>>10)&0x3F)<<2);T.ipsr=x&0x1FF};
+ T.enter=function(exc){let sp=T.r[13];sp-=32;const f=[T.r[0],T.r[1],T.r[2],T.r[3],T.r[12],T.r[14],T.r[15],T.xpsr()];for(let i=0;i<8;i++)T.wr(sp+i*4,4,f[i]);
+  T.r[13]=sp;T.r[14]=-7;T.act.push(exc);T.ipsr=exc;T.it=0;T.r[15]=T.rd32(exc*4)&~1;T.cy+=12};
+ T.exret=function(){let sp=T.r[13];const f=[];for(let i=0;i<8;i++)f.push(T.rd32(sp+i*4)|0);T.r[13]=sp+32;T.r[0]=f[0];T.r[1]=f[1];T.r[2]=f[2];T.r[3]=f[3];T.r[12]=f[4];T.r[14]=f[5];T.r[15]=f[6]&~1;T.setx(f[7]>>>0);T.act.pop();T.cy+=12;T.level()};
+ T.bx=function(a){if((a>>>0)>=0xFFFFFFF0)T.exret();else T.r[15]=a&~1};
+ T.sysclk=function(){const c=T.rcc.cfgr,sw=c&3;let f=8e6;if(sw==2){const mul=Math.min(16,((c>>18)&15)+2);f=((c>>16)&1)?(((c>>17)&1)?4e6:8e6)*mul:4e6*mul}const h=(c>>4)&15;return f/(h<8?1:[2,4,8,16,64,128,256,512][h-8])};
+ // ---- ALU helpers
+ const cond=c=>{switch(c){case 0:return T.Z;case 1:return!T.Z;case 2:return T.C;case 3:return!T.C;case 4:return T.N;case 5:return!T.N;case 6:return T.V;case 7:return!T.V;case 8:return T.C&&!T.Z;case 9:return!T.C||T.Z;case 10:return T.N==T.V;case 11:return T.N!=T.V;case 12:return!T.Z&&T.N==T.V;case 13:return T.Z||T.N!=T.V;default:return 1}};
+ const nz=v=>{T.N=v>>>31;T.Z=v==0?1:0;return v};
+ const awc=(a,b,c,s)=>{const u=(a>>>0)+(b>>>0)+c,r=u|0;if(s){T.N=r>>>31;T.Z=r==0?1:0;T.C=u>0xFFFFFFFF?1:0;T.V=((~(a^b)&(a^r))>>>31)}return r};
+ let sc=0;
+ const shift=(v,ty,n,ci)=>{sc=ci;v|=0;if(n==0)return v;switch(ty){case 0:if(n>32){sc=0;return 0}sc=n==32?v&1:(v>>>(32-n))&1;return n==32?0:v<<n;case 1:if(n>32){sc=0;return 0}sc=(v>>>(n-1))&1;return n==32?0:v>>>n;case 2:if(n>=32){sc=v>>>31;return v>>31}sc=(v>>(n-1))&1;return v>>n;default:n&=31;if(n==0){sc=v>>>31;return v}sc=(v>>>(n-1))&1;return(v>>>n)|(v<<(32-n))}};
+ const rrx=(v,ci)=>{sc=v&1;return(v>>>1)|(ci<<31)};
+ const sx=(v,b)=>(v<<(32-b))>>(32-b);
+ const expand=(i,i3,i8)=>{const x=(i<<11)|(i3<<8)|i8;if((x>>10)==0){switch((x>>8)&3){case 0:return i8;case 1:return(i8<<16)|i8;case 2:return(i8<<24)|(i8<<8);default:return i8*0x01010101|0}}const u=0x80|(x&0x7F),r=x>>7;sc=(((u>>>r)|(u<<(32-r)))>>>31)&1;return((u>>>r)|(u<<(32-r)))|0};
+ T.un=function(h,h2,a){T.fault('Unimplemented instruction 0x'+h.toString(16)+(h2>=0?' 0x'+h2.toString(16):'')+' at 0x'+a.toString(16))};
+ // ---- step
+ T.step=function(){
+  if(T.halted)return 0;
+  if(T.nvPend[0]|T.nvPend[1]|T.nvPend[2])T.checkIrq();
+  if(T.pend.length){let bi=0,bp=1e9;for(let i=0;i<T.pend.length;i++){const e=T.pend[i],p=T.prio(e);if(p<bp||(p==bp&&e<T.pend[bi])){bp=p;bi=i}}
+   const cur=T.act.length?T.prio(T.act[T.act.length-1]):256;
+   if(bp<cur&&(!T.primask||bp<0)){const e=T.pend.splice(bi,1)[0];T.enter(e);return 12}}
+  const r=T.r,pc=r[15]>>>0,h=T.rd(pc,2);let c=1;
+  const big=(h>>11)>=0x1D;let h2=-1;if(big)h2=T.rd(pc+2,2);
+  const size=big?4:2,pc4=pc+4;
+  if(T.it&0xF){const cc=T.it>>4;let ok=cond(cc);
+   const adv=()=>{T.it=(T.it&7)==0?0:((T.it&0xE0)|((T.it<<1)&0x1F))};
+   if(!ok){r[15]=pc+size;adv();T.adv(1);return 1}
+   const inIT=true;try{c=T.exec(h,h2,pc,pc4,size,inIT)}finally{}if((h&0xFF00)!=0xBF00||(h&0xF)==0)adv();T.adv(c);return c}
+  c=T.exec(h,h2,pc,pc4,size,false);T.adv(c);return c};
+ T.exec=function(h,h2,pc,pc4,size,inIT){const r=T.r,S=!inIT;let c=1;r[15]=pc+size;
+  const rg=n=>n==15?(pc4|0):r[n];
+  const ldst=(L,n,sg,a,rt)=>{if(L){let v=T.rd(a,n);if(sg)v=n==1?sx(v,8):sx(v,16);if(rt==15){T.bx(v|0)}else r[rt]=v|0;c=2}else{T.wr(a,n,r[rt]);c=2}};
+  if(!(size==4)){
+   const t=h>>11;
+   if(t<3){const rd=h&7,rm=(h>>3)&7,im=(h>>6)&31;let v;if(t==0){v=im?shift(r[rm],0,im,T.C):r[rm];if(im)T.C=sc}else if(t==1){v=shift(r[rm],1,im||32,T.C);T.C=sc}else{v=shift(r[rm],2,im||32,T.C);T.C=sc}
+    if(S)nz(v|0);else{}r[rd]=v;return 1}
+   if(t==3){const rd=h&7,rn=(h>>3)&7,o=(h>>6)&7,op=(h>>9)&3;let v;if(op==0)v=awc(r[rn],r[o],0,S);else if(op==1)v=awc(r[rn],~r[o],1,S);else if(op==2)v=awc(r[rn],(h>>6)&7,0,S);else v=awc(r[rn],~((h>>6)&7),1,S);r[rd]=v;return 1}
+   if(t<8){const rd=(h>>8)&7,i=h&255;if(t==4){r[rd]=i;if(S)nz(i)}else if(t==5)awc(r[rd],~i,1,true);else if(t==6)r[rd]=awc(r[rd],i,0,S);else r[rd]=awc(r[rd],~i,1,S);return 1}
+   if((h>>10)==0x10){const op=(h>>6)&15,rd=h&7,rm=(h>>3)&7,a=r[rd],b=r[rm];let v;
+    switch(op){case 0:v=a&b;if(S)nz(v);r[rd]=v;break;case 1:v=a^b;if(S)nz(v);r[rd]=v;break;case 2:v=shift(a,0,b&255,T.C);if(S){T.C=sc;nz(v)}r[rd]=v;break;case 3:v=shift(a,1,b&255,T.C);if(S){T.C=sc;nz(v)}r[rd]=v;break;case 4:v=shift(a,2,b&255,T.C);if(S){T.C=sc;nz(v)}r[rd]=v;break;
+     case 5:r[rd]=awc(a,b,T.C,S);break;case 6:r[rd]=awc(a,~b,T.C,S);break;case 7:v=shift(a,3,b&255,T.C);if(S){T.C=sc;nz(v)}r[rd]=v;break;case 8:nz(a&b);break;case 9:r[rd]=awc(0,~b,1,S);break;case 10:awc(a,~b,1,true);break;case 11:awc(a,b,0,true);break;
+     case 12:v=a|b;if(S)nz(v);r[rd]=v;break;case 13:v=Math.imul(a,b);if(S)nz(v);r[rd]=v;break;case 14:v=a&~b;if(S)nz(v);r[rd]=v;break;default:v=~b;if(S)nz(v);r[rd]=v}return 1}
+   if((h>>10)==0x11){const op=(h>>8)&3,rm=(h>>3)&15;if(op==3){const t2=r[rm];if(h&0x80)r[14]=(pc+2)|1;T.bx(t2);return 3}const rd=(h&7)|((h>>4)&8);
+    if(op==0){const v=rg(rd)+rg(rm)|0;if(rd==15)T.bx(v);else r[rd]=v;return rd==15?3:1}if(op==1){awc(rg(rd),~rg(rm),1,true);return 1}const v=rg(rm);if(rd==15)T.bx(v);else r[rd]=v;return rd==15?3:1}
+   if(t==9){r[(h>>8)&7]=T.rd32(((pc4&~3)+((h&255)<<2))>>>0)|0;return 2}
+   if((h>>12)==5){const o=(h>>9)&7,rm=(h>>6)&7,rn=(h>>3)&7,rt=h&7,a=(r[rn]+r[rm])>>>0;switch(o){case 0:ldst(0,4,0,a,rt);break;case 1:ldst(0,2,0,a,rt);break;case 2:ldst(0,1,0,a,rt);break;case 3:ldst(1,1,1,a,rt);break;case 4:ldst(1,4,0,a,rt);break;case 5:ldst(1,2,0,a,rt);break;case 6:ldst(1,1,0,a,rt);break;default:ldst(1,2,1,a,rt)}return 2}
+   if((h>>13)==3){const B=(h>>12)&1,L=(h>>11)&1,im=(h>>6)&31,rn=(h>>3)&7,rt=h&7;ldst(L,B?1:4,0,(r[rn]+(B?im:im<<2))>>>0,rt);return 2}
+   if((h>>12)==8){const L=(h>>11)&1,im=(h>>6)&31,rn=(h>>3)&7,rt=h&7;ldst(L,2,0,(r[rn]+(im<<1))>>>0,rt);return 2}
+   if((h>>12)==9){const L=(h>>11)&1,rt=(h>>8)&7;ldst(L,4,0,(r[13]+((h&255)<<2))>>>0,rt);return 2}
+   if((h>>12)==10){const rd=(h>>8)&7,i=(h&255)<<2;r[rd]=(h&0x800)?r[13]+i:((pc4&~3)+i)|0;return 1}
+   if((h>>12)==11){
+    if((h&0xFF00)==0xB000){const i=(h&127)<<2;r[13]=(h&0x80)?r[13]-i:r[13]+i;return 1}
+    if((h&0xF500)==0xB100){const rn=h&7,off=(((h>>9)&1)<<6)|(((h>>3)&31)<<1),nzf=(h>>11)&1;if((r[rn]==0)!=!!nzf){r[15]=(pc4+off)|0;return 3}return 1}
+    if((h&0xFF00)==0xB200){const rm=(h>>3)&7,rd=h&7,op=(h>>6)&3,v=r[rm];r[rd]=op==0?sx(v,16):op==1?sx(v,8):op==2?v&0xFFFF:v&0xFF;return 1}
+    if((h&0xFE00)==0xB400){let sp=r[13];const n=bc(h&255)+((h>>8)&1);sp-=n*4;let a=sp>>>0;for(let i=0;i<8;i++)if((h>>i)&1){T.wr(a,4,r[i]);a+=4}if(h&0x100)T.wr(a,4,r[14]);r[13]=sp;return 1+n}
+    if((h&0xFE00)==0xBC00){let a=r[13]>>>0;for(let i=0;i<8;i++)if((h>>i)&1){r[i]=T.rd32(a)|0;a+=4}let pcset=null;if(h&0x100){pcset=T.rd32(a)|0;a+=4}r[13]=a|0;if(pcset!==null){T.bx(pcset);return 4+bc(h&255)}return 1+bc(h&255)}
+    if((h&0xFF00)==0xBA00){const rm=(h>>3)&7,rd=h&7,v=r[rm],op=(h>>6)&3;r[rd]=op==0?((v&255)<<24|(v&0xFF00)<<8|(v>>>8)&0xFF00|v>>>24)|0:op==1?(((v&0xFF00FF00)>>>8)|((v&0x00FF00FF)<<8))|0:sx(((v&255)<<8)|((v>>>8)&255),16);return 1}
+    if((h&0xFF00)==0xBE00){T.fault('BKPT');return 1}
+    if((h&0xFF00)==0xBF00){const m=h&15;if(m){T.it=(((h>>4)&15)<<4)|m;return 1}return 1}
+    if((h&0xFFE8)==0xB660){T.primask=(h&0x10)?1:0;return 1}
+    T.un(h,-1,pc);return 1}
+   if((h>>12)==12){const L=(h>>11)&1,rn=(h>>8)&7;let a=r[rn]>>>0;for(let i=0;i<8;i++)if((h>>i)&1){if(L)r[i]=T.rd32(a)|0;else T.wr(a,4,r[i]);a+=4}if(!L||!((h>>rn)&1))r[rn]=a|0;return 1+bc(h&255)}
+   if((h>>12)==13){const cc=(h>>8)&15;if(cc==15){T.raise(11);return 1}if(cc==14){T.un(h,-1,pc);return 1}if(cond(cc)){r[15]=(pc4+(sx(h&255,8)<<1))|0;return 3}return 1}
+   if((h>>11)==0x1C){r[15]=(pc4+(sx(h&0x7FF,11)<<1))|0;return 3}
+   T.un(h,-1,pc);return 1}
+  // ---- 32-bit
+  const rn=h&15,rd=(h2>>8)&15,rm=h2&15,hi=h>>11;
+  if(hi==0x1D){
+   if((h>>9)==0x74&&!(h&0x40)&&(((h>>7)&3)==1||((h>>7)&3)==2)){const L=(h>>4)&1,W=(h>>5)&1,db=((h>>7)&3)==2,list=h2&0xFFFF,n=bc16(list);let a=r[rn]>>>0;if(db)a=(a-n*4)>>>0;const start=a;
+    for(let i=0;i<16;i++)if((list>>i)&1){if(L){const v=T.rd32(a)|0;if(i==15)T.bx(v);else r[i]=v}else T.wr(a,4,rg(i));a+=4}
+    if(W){r[rn]=db?start|0:a|0}return 2+n}
+   if((h>>9)==0x74&&(h&0x40)&&(((h>>8)&1)||((h>>5)&1))){const P=(h>>8)&1,U=(h>>7)&1,W=(h>>5)&1,L=(h>>4)&1,t1=(h2>>12)&15,t2=(h2>>8)&15,im=(h2&255)<<2,b=rn==15?(pc4&~3):r[rn],off=(U?b+im:b-im)|0,ad=(P?off:b)>>>0;
+    if(L){r[t1]=T.rd32(ad)|0;r[t2]=T.rd32(ad+4)|0}else{T.wr(ad,4,r[t1]);T.wr(ad+4,4,r[t2])}if(W)r[rn]=off;return 3}
+   if(h==0xE8D0&&(h2&0xFFE0)==0xF000){const tb=h2&0x10?2:1,base=rn==15?pc4:r[rn]>>>0,idx=r[rm]>>>0,off=T.rd(base+idx*tb,tb);r[15]=(pc4+off*2)|0;return 4}
+   if((h&0xFE00)==0xEA00){const op=(h>>5)&15,s=(h>>4)&1,imm=((h2>>12)&7)<<2|((h2>>6)&3),ty=(h2>>4)&3;let v;
+    let b=r[rm];sc=T.C;if(ty==3&&imm==0&&true){}
+    const sh=ty==3&&imm==0?rrx(b,T.C):shift(b,ty,imm==0&&ty!=0?32:imm,T.C);const C2=(imm==0&&ty==0)?T.C:sc,a=rg(rn),SS=s&&S?1:s;const setf=s&&!inIT||(s&&inIT&&false);
+    const lg=(x)=>{if(s){nz(x);T.C=C2}return x};
+    switch(op){case 0:v=a&sh;if(rd==15&&s){nz(v);T.C=C2;return 1}r[rd]=lg(v);break;case 1:r[rd]=lg(a&~sh);break;
+     case 2:v=rn==15?sh:(a|sh);r[rd]=lg(v);break;case 3:v=rn==15?~sh:(a|~sh);r[rd]=lg(v);break;case 4:v=a^sh;if(rd==15&&s){nz(v);T.C=C2;return 1}r[rd]=lg(v);break;
+     case 8:v=awc(a,sh,0,s);if(rd==15&&s)return 1;r[rd]=v;break;case 10:r[rd]=awc(a,sh,T.C,s);break;case 11:r[rd]=awc(a,~sh,T.C,s);break;
+     case 13:v=awc(a,~sh,1,s);if(rd==15&&s)return 1;r[rd]=v;break;case 14:r[rd]=awc(sh,~a,1,s);break;default:T.un(h,h2,pc)}return 1}
+   if((h&0xFE50)==0xE850&&false){}
+   T.un(h,h2,pc);return 1}
+  if(hi==0x1E){
+   if(!(h2&0x8000)){
+    if(!(h&0x0200)){const op=(h>>5)&15,s=(h>>4)&1,i=(h>>10)&1;sc=T.C;const imm=expand(i,(h2>>12)&7,h2&255),a=rg(rn),C2=((((i<<11)|((h2>>12)&7)<<8|(h2&255))>>10)==0)?T.C:sc;let v;
+     const lg=x=>{if(s){nz(x);T.C=C2}return x};
+     switch(op){case 0:v=a&imm;if(rd==15&&s){nz(v);T.C=C2;return 1}r[rd]=lg(v);break;case 1:r[rd]=lg(a&~imm);break;case 2:r[rd]=lg(rn==15?imm:(a|imm));break;case 3:r[rd]=lg(rn==15?~imm:(a|~imm));break;
+      case 4:v=a^imm;if(rd==15&&s){nz(v);T.C=C2;return 1}r[rd]=lg(v);break;case 8:v=awc(a,imm,0,s);if(rd==15&&s)return 1;r[rd]=v;break;case 10:r[rd]=awc(a,imm,T.C,s);break;case 11:r[rd]=awc(a,~imm,T.C,s);break;
+      case 13:v=awc(a,~imm,1,s);if(rd==15&&s)return 1;r[rd]=v;break;case 14:r[rd]=awc(imm,~a,1,s);break;default:T.un(h,h2,pc)}return 1}
+    const op=(h>>4)&31,imm12=(((h>>10)&1)<<11)|(((h2>>12)&7)<<8)|(h2&255),a=rg(rn);
+    switch(op){case 0:r[rd]=a+imm12|0;break;case 10:r[rd]=a-imm12|0;break;case 4:r[rd]=((h&15)<<12)|(((h>>10)&1)<<11)|(((h2>>12)&7)<<8)|(h2&255);break;case 12:r[rd]=(r[rd]&0xFFFF)|((((h&15)<<12)|(((h>>10)&1)<<11)|(((h2>>12)&7)<<8)|(h2&255))<<16);break;
+     case 20:{const lsb=((h2>>12)&7)<<2|((h2>>6)&3),w=(h2&31)+1;r[rd]=sx((r[rn]>>>lsb)&(w>=32?-1:((1<<w)-1)),w);break}
+     case 28:{const lsb=((h2>>12)&7)<<2|((h2>>6)&3),w=(h2&31)+1;r[rd]=(r[rn]>>>lsb)&(w>=32?-1:((1<<w)-1));break}
+     case 22:{const lsb=((h2>>12)&7)<<2|((h2>>6)&3),msb=h2&31,w=msb-lsb+1,mk=(w>=32?-1:((1<<w)-1))<<lsb,v=rn==15?0:r[rn];r[rd]=(r[rd]&~mk)|((v<<lsb)&mk);break}
+     default:T.un(h,h2,pc)}return 1}
+   // branches & misc
+   if((h2&0xD000)==0x8000){if((h&0x3C0)==0x3C0){// misc control
+      if(h==0xF3EF){const sy=h2&255;r[rd]=sy==0x10?T.primask:sy==8||sy==9?r[13]:sy==0?T.xpsr()&0xF8000000:sy==5?T.ipsr:sy==0x14?0:0;return 2}
+      if((h&0xFFF0)==0xF380){const sy=h2&255;if(sy==0x10)T.primask=r[rn]&1;else if(sy==8)r[13]=r[rn];return 2}
+      if(h==0xF3BF)return 1;T.un(h,h2,pc);return 1}
+    const cc=(h>>6)&15;if(cond(cc)){const s=(h>>10)&1,j1=(h2>>13)&1,j2=(h2>>11)&1,im=(s<<20)|(j2<<19)|(j1<<18)|((h&0x3F)<<12)|((h2&0x7FF)<<1);r[15]=(pc4+sx(im,21))|0;return 3}return 1}
+   if((h2&0xD000)==0x9000||(h2&0xD000)==0xD000){const s=(h>>10)&1,j1=(h2>>13)&1,j2=(h2>>11)&1,i1=(j1^s)?0:1,i2=(j2^s)?0:1,im=(s<<24)|(i1<<23)|(i2<<22)|((h&0x3FF)<<12)|((h2&0x7FF)<<1);
+    if(h2&0x4000)r[14]=(pc+4)|1;r[15]=(pc4+sx(im,25))|0;return 4}
+   T.un(h,h2,pc);return 1}
+  // 0x1F: load/store, data proc register, multiply, divide
+  {
+   if((h&0xFE00)==0xF800||(h&0xFE00)==0xF900){
+    const sz=(h>>5)&3,L=(h>>4)&1,sg=(h>>8)&1;let rt=(h2>>12)&15,a;
+    if(sz==3){T.un(h,h2,pc);return 1}
+    if(L&&rn==15){const i=(h2&0xFFF),u=(h>>7)&1;a=((pc4&~3)+(u?i:-i))>>>0}
+    else if((h>>7)&1){a=(r[rn]+(h2&0xFFF))>>>0}
+    else if(h2&0x800){const P=(h2>>10)&1,U=(h2>>9)&1,W=(h2>>8)&1,i=h2&255,b=r[rn],off=U?i:-i;a=(P?b+off:b)>>>0;if(W||!P)r[rn]=b+off|0;}
+    else{const sh=(h2>>4)&3;a=(r[rn]+(r[rm]<<sh))>>>0}
+    const n=sz==0?1:sz==1?2:4;
+    if(L){let v=T.rd(a,n);if(sg)v=sx(v,n*8);if(rt==15)T.bx(v|0);else r[rt]=v|0;return 2}
+    T.wr(a,n,r[rt]);return 2}
+   if((h&0xFF80)==0xFB00&&(h2&0xF0)==0){const ra=(h2>>12)&15;if(ra==15)r[rd]=Math.imul(r[rn],r[rm]);else r[rd]=(r[ra]+Math.imul(r[rn],r[rm]))|0;return 1}
+   if((h&0xFF80)==0xFB00&&(h2&0xF0)==0x10){const ra=(h2>>12)&15;r[rd]=(r[ra]-Math.imul(r[rn],r[rm]))|0;return 1}
+   if((h&0xFFF0)==0xFB90&&(h2&0xF0F0)==0xF0F0){const b=r[rm];r[rd]=b==0?0:(r[rn]==-2147483648&&b==-1?-2147483648:(r[rn]/b)|0);return 8}
+   if((h&0xFFF0)==0xFBB0&&(h2&0xF0F0)==0xF0F0){const b=r[rm]>>>0;r[rd]=b==0?0:((r[rn]>>>0)/b)>>>0|0;return 8}
+   if((h&0xFFF0)==0xFBA0||(h&0xFFF0)==0xFB80){const sg=(h&0xFFF0)==0xFB80,lo=(h2>>12)&15,hi2=rd;let p=sg?BigInt(r[rn])*BigInt(r[rm]):BigInt(r[rn]>>>0)*BigInt(r[rm]>>>0);r[lo]=Number(BigInt.asIntN(32,p));r[hi2]=Number(BigInt.asIntN(32,p>>32n));return 3}
+   if((h&0xFF80)==0xFA00&&(h2&0xF0F0)==0xF000){const ty=(h>>5)&3,s=(h>>4)&1,v=shift(r[rn],ty,r[rm]&255,T.C);if(s){T.C=sc;nz(v|0)}r[rd]=v;return 1}
+   if((h&0xFF80)==0xFA00&&(h2&0xF0C0)==0xF080){const op=(h>>4)&7,v=r[rm],ro=((h2>>4)&3)*8,x=ro?((v>>>ro)|(v<<(32-ro))):v,a=(h&0xF)==15?0:r[rn];
+    if(rn==15){r[rd]=op==0?sx(x&0xFFFF,16):op==1?x&0xFFFF:op==4?sx(x&255,8):op==5?x&255:0;if(op>5)T.un(h,h2,pc);return 1}T.un(h,h2,pc);return 1}
+   if(h==0xFA0F||h==0xFA1F||h==0xFA4F||h==0xFA5F){const v=r[rm],ro=((h2>>4)&3)*8,x=ro?((v>>>ro)|(v<<(32-ro))):v;r[rd]=h==0xFA0F?sx(x&0xFFFF,16):h==0xFA1F?x&0xFFFF:h==0xFA4F?sx(x&255,8):x&255;return 1}
+   if((h&0xFFF0)==0xFAB0&&(h2&0xF0F0)==0xF080){r[rd]=Math.clz32(r[rm]);return 1}
+   if((h&0xFFF0)==0xFA90&&(h2&0xF0F0)==0xF0A0){let v=r[rm],o=0;for(let i=0;i<32;i++)o=(o<<1)|((v>>>i)&1);r[rd]=o;return 1}
+   if((h&0xFFF0)==0xFA90&&(h2&0xF0F0)==0xF080){const v=r[rm];r[rd]=((v&255)<<24|(v&0xFF00)<<8|(v>>>8)&0xFF00|v>>>24)|0;return 1}
+   T.un(h,h2,pc);return 1}
+ };
+ const bc=x=>{let n=0;while(x){n+=x&1;x>>=1}return n},bc16=bc;
+}
+
+</script>
+<script>
+const EXS=[{"id": "hdr", "title": "Start here: blink + button + UART (stm32f1.h)", "src": "#include <stdint.h>\n#include \"stm32f1.h\"\n\nstatic volatile uint32_t ms;\nvoid SysTick_Handler(void) { ms++; }\n\nstatic void uart_putc(char c) { while (!(USART1->SR & 0x80)); USART1->DR = c; }\nstatic void uart_puts(const char *s) { while (*s) uart_putc(*s++); }\n\nint main(void) {\n    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_IOPCEN | RCC_APB2ENR_USART1EN;\n    gpio_cfg(GPIOC, 13, GPIO_OUT_PP_2MHZ);          /* onboard LED          */\n    gpio_cfg(GPIOA, 5,  GPIO_OUT_PP_2MHZ);          /* external LED         */\n    gpio_cfg(GPIOA, 0,  GPIO_IN_PULL);              /* button, pulled up    */\n    GPIOA->ODR |= 1u;\n    gpio_cfg(GPIOA, 9,  GPIO_AF_PP_2MHZ);           /* USART1 TX            */\n    USART1->BRR = 69;                               /* 8 MHz / 115200       */\n    USART1->CR1 = (1u << 13) | (1u << 3);           /* UE | TE              */\n    SysTick->LOAD = 8000 - 1;                       /* 1 ms tick            */\n    SysTick->CTRL = 7;\n\n    uart_puts(\"Hello from main.c!\\r\\n\");\n    uint32_t last = 0;\n    while (1) {\n        if (ms - last >= 500) { last = ms; GPIOC->ODR ^= 1u << 13; }\n        if (GPIOA->IDR & 1u) GPIOA->BSRR = 1u << 21;    /* released: LED off */\n        else                 GPIOA->BSRR = 1u << 5;     /* pressed:  LED on  */\n    }\n}\n", "b64": "AFAAIDUBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIdQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgxAQAIMQEACDEBAAgxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgAAAAAAAAAAAAAAAAAAAAAMQEACAAAAAAAAAAAAAAAAAAAAAAxAQAIMQEACDEBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIMQEACDEBAAgxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nAAAItQpKCksLSYtCB9MAIQpLCkqTQgfTAPAb+P7nUvgEC0P4BAvw50P4BBvy52gCAAgAAAAgAAAAIAAAACAEAAAgAkoTaAEzE2BwRwC/AAAAICtKLEiTaXC1Q/SAQ0PwFAOTYUNoQfY/dCP0cAND9AATQ2AlS9P4ACgi9HACQvQAEsP4ACjT+AAoIvAPAkLwCALD+AAoHUrRaEHwAQHRYNP4BBgh8PABQfCgAcP4BBhFIxdJi2BC8ggDy2BP8OAjXGEHJBxhE0wU+AE7m7kgJU/0ABYRTCFoyRqx9fp/Ib8jaMFogfQAUcFgkWjJB0y/FmEVYe/nDWgtBvzVS2Dj5wC/ABACQAAQAUAAAAFAAAgBQAA4AUBQAgAIAAAAIEhlbGxvIGZyb20gbWFpbi5jIQ0KAAAAAA=="}, {"id": "irq", "title": "Interrupts: EXTI button + TIM2 timer + UART", "src": "#include <stdint.h>\n#include \"stm32f1.h\"\n\nstatic volatile uint32_t presses;\n\nvoid EXTI0_IRQHandler(void) {          /* button on PA0, falling edge */\n    EXTI->PR = 1;                      /* clear the pending flag first */\n    presses++;\n}\n\nvoid TIM2_IRQHandler(void) {           /* timer tick, twice a second */\n    TIM2->SR &= ~1u;\n    GPIOC->ODR ^= 1u << 13;            /* blink the onboard LED */\n}\n\nstatic void uart_putc(char c) { while (!(USART1->SR & 0x80)); USART1->DR = c; }\nstatic void uart_puts(const char *s) { while (*s) uart_putc(*s++); }\nstatic void uart_num(uint32_t v) {\n    char b[11]; int i = 0;\n    do { b[i++] = '0' + v % 10; v /= 10; } while (v);\n    while (i) uart_putc(b[--i]);\n}\n\nint main(void) {\n    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_IOPCEN | RCC_APB2ENR_AFIOEN | RCC_APB2ENR_USART1EN;\n    RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;\n    gpio_cfg(GPIOC, 13, GPIO_OUT_PP_2MHZ);\n    gpio_cfg(GPIOA, 5,  GPIO_OUT_PP_2MHZ);\n    gpio_cfg(GPIOA, 0,  GPIO_IN_PULL);  GPIOA->ODR |= 1u;     /* button, pulled up */\n    gpio_cfg(GPIOA, 9,  GPIO_AF_PP_2MHZ);\n    USART1->BRR = 69;  USART1->CR1 = (1u << 13) | (1u << 3);\n\n    AFIO->EXTICR[0] = 0;               /* EXTI0 listens to PA0 */\n    EXTI->FTSR |= 1u;                  /* falling edge */\n    EXTI->IMR  |= 1u;                  /* unmask line 0 */\n    NVIC_SetPriority(EXTI0_IRQn, 1);   /* button is more urgent than the timer */\n    NVIC_EnableIRQ(EXTI0_IRQn);\n\n    TIM2->PSC = 7999;  TIM2->ARR = 499;   /* 8 MHz / 8000 / 500 = 2 Hz */\n    TIM2->DIER = 1;  TIM2->CR1 = 1;\n    NVIC_SetPriority(TIM2_IRQn, 5);\n    NVIC_EnableIRQ(TIM2_IRQn);\n\n    uart_puts(\"Interrupts demo: press the button\\r\\n\");\n    uint32_t shown = 0;\n    for (;;) {\n        if (presses != shown) {\n            shown = presses;\n            GPIOA->ODR ^= 1u << 5;     /* toggle the LED on PA5 */\n            uart_puts(\"presses = \"); uart_num(shown); uart_puts(\"\\r\\n\");\n        }\n    }\n}\n", "b64": "AFAAIDUBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJEBAAgxAQAIMQEACDEBAAgxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgAAAAAAAAAAAAAAAAAAAAAMQEACAAAAAAAAAAAAAAAAAAAAACpAQAIMQEACDEBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIMQEACDEBAAgxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nAAAItQpKCksLSYtCB9MAIQpLCkqTQgfTAPA7+P7nUvgEC0P4BAvw50P4BBvy5zwDAAgAAAAgAAAAIAAAACAEAAAgBUoBOBD4AT8DuXBHEWgJBvzVU2D25wC/ADgBQAEiA0taYQNKE2gBMxNgcEcABAFAAAAAIE/wgEITaSPwAQMTYQL1iDLTaIP0AFPTYHBHAABISi3p8EOTaUdNQ/SAQ0PwFQOTYdNpRU5D8AED02Gi9YAyU2gAJCP0cAND9AATU2A/S0BJ0/gAKEH2P3Ai9HACQvQAEsP4ACjT+AAohbAi8A8CQvAIAsP4ACjqaDZPQvABAupg0/gEKN/40IAi8PACQvCgAsP4BChFIrJgQvIIAvJgnGDT+AwkQvABAsP4DCTT+AAkQvABAsP4ACQQI0/w4CKLcUAjwvgAMU/wgEOYYkDy8xDYYgEg2GAYYFAjC3dP8IBTHkjC+AAx//dx/ztonEL80Dxo62hARoPwIAPrYP/3Zv8BqSJGACOJRk/wCg6y+/78DvscIDAwAfgBCxBGCShiRgPxAQPy2AE7GfgDIDFoCQb81XJgACv20QlI//dH/9TnABACQAAIAUAAOAFAAAABQADkAOAAAAAgMAMACAwDAAgtAwAISW50ZXJydXB0cyBkZW1vOiBwcmVzcyB0aGUgYnV0dG9uDQoAcHJlc3NlcyA9IAAA"}, {"id": "blank", "title": "Blank project (edit me)", "src": "#include <stdint.h>\n#include \"stm32f1.h\"\n\nint main(void) {\n    RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;\n    gpio_cfg(GPIOC, 13, GPIO_OUT_PP_2MHZ);\n    while (1) {\n        GPIOC->ODR ^= 1u << 13;                     /* toggle the onboard LED */\n        for (volatile int i = 0; i < 300000; i++);  /* crude delay            */\n    }\n}\n", "b64": "AFAAIDUBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgxAQAIMQEACDEBAAgxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgAAAAAAAAAAAAAAAAAAAAAMQEACAAAAAAAAAAAAAAAAAAAAAAxAQAIMQEACDEBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIMQEACDEBAAgxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nAAAItQpKCksLSYtCB9MAIQpLCkqTQgfTAPAT+P7nUvgEC0P4BAvw50P4BBvy57QBAAgAAAAgAAAAIAAAACAAAAAgACENSg1Ik2mCsEPwEAOTYaL1gDJTaCP0cAND9AATU2DTaIP0AFPTYAGRAZuDQvfcAZsBMwGT+OcAEAJA35MEAA=="}, {"id": "demo", "title": "Register-level: blink + button + UART", "src": "#define RCC_APB2ENR (*(volatile unsigned *)0x40021018)\n#define GPIOA_CRL   (*(volatile unsigned *)0x40010800)\n#define GPIOA_CRH   (*(volatile unsigned *)0x40010804)\n#define GPIOA_IDR   (*(volatile unsigned *)0x40010808)\n#define GPIOA_ODR   (*(volatile unsigned *)0x4001080C)\n#define GPIOA_BSRR  (*(volatile unsigned *)0x40010810)\n#define GPIOC_CRH   (*(volatile unsigned *)0x40011004)\n#define GPIOC_ODR   (*(volatile unsigned *)0x4001100C)\n#define USART1_SR   (*(volatile unsigned *)0x40013800)\n#define USART1_DR   (*(volatile unsigned *)0x40013804)\n#define USART1_BRR  (*(volatile unsigned *)0x40013808)\n#define USART1_CR1  (*(volatile unsigned *)0x4001380C)\n#define STK_CTRL    (*(volatile unsigned *)0xE000E010)\n#define STK_LOAD    (*(volatile unsigned *)0xE000E014)\n\nstatic volatile unsigned ms;\nvoid SysTick_Handler(void) { ms++; }\n\nstatic void tx(char c) { while (!(USART1_SR & 0x80)); USART1_DR = c; }\nstatic void say(const char *s) { while (*s) tx(*s++); }\n\nint main(void) {\n    RCC_APB2ENR |= (1u << 2) | (1u << 4) | (1u << 14);   /* GPIOA, GPIOC, USART1 */\n    GPIOA_CRL = (GPIOA_CRL & ~0x00F0000Fu) | 0x8u | (0x2u << 20); /* PA0 in (pull), PA5 out */\n    GPIOA_CRH = (GPIOA_CRH & ~(0xFu << 4)) | (0xAu << 4);        /* PA9 = USART1 TX       */\n    GPIOA_ODR |= 1u;                                             /* PA0 pull-up           */\n    GPIOC_CRH = (GPIOC_CRH & ~(0xFu << 20)) | (0x2u << 20);      /* PC13 out              */\n    USART1_BRR = 69;                                             /* 8 MHz / 115200        */\n    USART1_CR1 = (1u << 13) | (1u << 3);                         /* UE | TE               */\n    STK_LOAD = 8000 - 1;  STK_CTRL = 7;                          /* 1 ms SysTick          */\n\n    say(\"PinForge STM32F103 demo\\r\\n\");\n    unsigned last = 0, prev = 1;\n    while (1) {\n        if (ms - last >= 500) { last = ms; GPIOC_ODR ^= 1u << 13; }   /* blink PC13 */\n        unsigned b = GPIOA_IDR & 1u;\n        if (b != prev) { prev = b; say(b ? \"button released\\r\\n\" : \"button pressed\\r\\n\"); }\n        GPIOA_BSRR = b ? (1u << 21) : (1u << 5);                       /* button -> LED PA5 */\n    }\n}\n", "b64": "AFAAIDMBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIlQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nCLUKSgtLC0mLQgfTACEKSwtKk0IH0wDwLPj+51L4BAtD+AQL8OdD+AQb8ucAv8wCAAgAAAAgAAAAIAAAACAEAAAgBkoBOBD4AT8DuXBH0vgAGAkG+9XC+AQ49OcAvwAwAUACShNoATMTYHBHAL8AAAAgMUot6fhDk2kwTEP0gEND8BQDk2FFItT4ADgtTiP0cAMj8A8DQ/QAE0PwCAPE+AA41PgEOCdII/DwA0PwoAPE+AQ41PgMOAAnQ/ABA8T4DDhzaN/4hIAj9HADQ/QAE3NgHkvf+HyQw/gIKELyCALD+AwoT/DgI0H2P3JaYQciGmH/96b/ASLY+AAw2xuz9fp/Ib/Y+ABw82iD9ABT82DU+AhYBfABBapCBdAOSAAtCL9IRv/3jf8ALQy/ICNP9AATKkbE+BA43ucAEAJAAAABQAAQAUCvAgAIAAAAIAAwAUCeAgAIjAIACGJ1dHRvbiByZWxlYXNlZA0KAGJ1dHRvbiBwcmVzc2VkDQoAUGluRm9yZ2UgU1RNMzJGMTAzIGRlbW8NCgAAAAA="}, {"id": "blink", "title": "Blink PC13 (register level)", "src": "#define RCC_APB2ENR (*(volatile unsigned *)0x40021018)\n#define GPIOC_CRH   (*(volatile unsigned *)0x40011004)\n#define GPIOC_ODR   (*(volatile unsigned *)0x4001100C)\n\nint main(void) {\n    RCC_APB2ENR |= (1u << 4);            /* enable GPIOC clock   */\n    GPIOC_CRH &= ~(0xFu << 20);          /* PC13: clear CNF/MODE */\n    GPIOC_CRH |=  (0x2u << 20);          /* output, 2 MHz        */\n    while (1) {\n        GPIOC_ODR ^= (1u << 13);         /* toggle the LED       */\n        for (volatile int i = 0; i < 333000; i++);\n    }\n}\n", "b64": "AFAAIDMBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nCLUKSgtLC0mLQgfTACEKSwtKk0IH0wDwFPj+51L4BAtD+AQL8OdD+AQb8ucAv7wBAAgAAAAgAAAAIAAAACAAAAAgACEOSg5Ik2mCsEPwEAOTYQxLWmgi9HACWmBaaEL0ABJaYNpogvQAUtpgAZEBmoJC99wBmgEyAZL45wC/ABACQMcUBQAAEAFA"}, {"id": "button", "title": "Button \u2192 LED (polling)", "src": "#define RCC_APB2ENR (*(volatile unsigned *)0x40021018)\n#define GPIOA_CRL   (*(volatile unsigned *)0x40010800)\n#define GPIOA_IDR   (*(volatile unsigned *)0x40010808)\n#define GPIOA_ODR   (*(volatile unsigned *)0x4001080C)\n#define GPIOA_BSRR  (*(volatile unsigned *)0x40010810)\n\nint main(void) {\n    RCC_APB2ENR |= (1u << 2);                  /* GPIOA clock          */\n    GPIOA_CRL = (GPIOA_CRL & ~0x00F0000Fu)\n              | (0x8u << 0)                    /* PA0: input pull      */\n              | (0x2u << 20);                  /* PA5: output 2 MHz    */\n    GPIOA_ODR |= 1u;                           /* PA0 pull-up          */\n    while (1) {\n        if (GPIOA_IDR & 1u) GPIOA_BSRR = 1u << (5 + 16);   /* released: LED off */\n        else                GPIOA_BSRR = 1u << 5;          /* pressed: LED on   */\n    }\n}\n", "b64": "AFAAIDMBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nCLUKSgtLC0mLQgfTACEKSwtKk0IH0wDwFPj+51L4BAtD+AQL8OdD+AQb8ucAv8QBAAgAAAAgAAAAIAAAACAAAAAgEkpP9AARk2lD8AQDk2Gi9Ygy0vgAOCP0cAMj8A8DQ/QAE0PwCAPC+AA40vgMOEPwAQPC+Aw4ICPS+AgIwAdMv8L4EBjC+BA49ucAvwAQAkA="}, {"id": "exti", "title": "Button interrupt (EXTI0)", "src": "#define RCC_APB2ENR (*(volatile unsigned *)0x40021018)\n#define AFIO_EXTICR1 (*(volatile unsigned *)0x40010008)\n#define EXTI_IMR    (*(volatile unsigned *)0x40010400)\n#define EXTI_FTSR   (*(volatile unsigned *)0x4001040C)\n#define EXTI_PR     (*(volatile unsigned *)0x40010414)\n#define NVIC_ISER0  (*(volatile unsigned *)0xE000E100)\n#define GPIOA_CRL   (*(volatile unsigned *)0x40010800)\n#define GPIOA_ODR   (*(volatile unsigned *)0x4001080C)\n\nvoid EXTI0_IRQHandler(void) {\n    EXTI_PR = 1u;                       /* clear the pending flag    */\n    GPIOA_ODR ^= (1u << 5);             /* toggle the LED on PA5     */\n}\n\nint main(void) {\n    RCC_APB2ENR |= (1u << 0) | (1u << 2);                 /* AFIO + GPIOA */\n    GPIOA_CRL = (GPIOA_CRL & ~0x00F0000Fu) | 0x8u | (0x2u << 20);\n    GPIOA_ODR |= 1u;                                      /* PA0 pull-up  */\n    AFIO_EXTICR1 = 0;                                     /* EXTI0 <- PA0 */\n    EXTI_FTSR |= 1u;                                      /* falling edge */\n    EXTI_IMR  |= 1u;\n    NVIC_ISER0 = 1u << 6;                                 /* enable EXTI0 IRQ */\n    for (;;) __asm volatile (\"wfi\");\n}\n", "b64": "AFAAIDMBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHUBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nCLUKSgtLC0mLQgfTACEKSwtKk0IH0wDwIvj+51L4BAtD+AQL8OdD+AQb8ucAv/QBAAgAAAAgAAAAIAAAACAAAAAgASIFS8P4FCTT+AwogvAgAsP4DChwRwC/AAABQBZKk2lD8AUDk2EVS9P4ACgi9HACIvAPAkL0ABJC8AgCw/gAKNP4DChC8AECw/gMKAAimmDT+AwkQvABAsP4DCTT+AAkQvABAsP4ACRP8OAjQCLD+AAhML/95wC/ABACQAAAAUA="}, {"id": "systick", "title": "SysTick millisecond timer", "src": "#define RCC_APB2ENR (*(volatile unsigned *)0x40021018)\n#define GPIOC_CRH   (*(volatile unsigned *)0x40011004)\n#define GPIOC_ODR   (*(volatile unsigned *)0x4001100C)\n#define STK_CTRL    (*(volatile unsigned *)0xE000E010)\n#define STK_LOAD    (*(volatile unsigned *)0xE000E014)\n\nstatic volatile unsigned ms;\n\nvoid SysTick_Handler(void) { ms++; }       /* fires every millisecond */\n\nstatic void delay_ms(unsigned t) { unsigned s = ms; while (ms - s < t); }\n\nint main(void) {\n    RCC_APB2ENR |= (1u << 4);\n    GPIOC_CRH = (GPIOC_CRH & ~(0xFu << 20)) | (0x2u << 20);\n    STK_LOAD = 8000 - 1;                    /* 8 MHz / 1 kHz */\n    STK_CTRL = 7;                           /* enable, interrupt, HCLK */\n    while (1) {\n        GPIOC_ODR ^= (1u << 13);\n        delay_ms(250);\n    }\n}\n", "b64": "AFAAIDMBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIdQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nCLUKSgtLC0mLQgfTACEKSwtKk0IH0wDwHPj+51L4BAtD+AQL8OdD+AQb8ucAv8wBAAgAAAAgAAAAIAAAACAEAAAgAkoTaAEzE2BwRwC/AAAAIA9KQfY/cZNpQ/AQA5NhovWAMlNoI/RwA0P0ABNTYE/w4CNZYQchGWEGSdNog/QAU9NgCGgLaBsa+Sv72fXnAL8AEAJAAAAAIA=="}, {"id": "uart", "title": "UART hello (USART1)", "src": "#define RCC_APB2ENR (*(volatile unsigned *)0x40021018)\n#define USART1_SR   (*(volatile unsigned *)0x40013800)\n#define USART1_DR   (*(volatile unsigned *)0x40013804)\n#define USART1_BRR  (*(volatile unsigned *)0x40013808)\n#define USART1_CR1  (*(volatile unsigned *)0x4001380C)\n\nstatic void putc_(char c) { while (!(USART1_SR & 0x80)); USART1_DR = c; }\nstatic void puts_(const char *s) { while (*s) putc_(*s++); }\nstatic void putu(unsigned v) {\n    char b[11]; int i = 0;\n    do { b[i++] = '0' + v % 10; v /= 10; } while (v);\n    while (i) putc_(b[--i]);\n}\n\nint main(void) {\n    RCC_APB2ENR |= (1u << 14);              /* USART1 clock */\n    USART1_BRR = 8000000 / 115200;\n    USART1_CR1 = (1u << 13) | (1u << 3);    /* UE | TE */\n    puts_(\"Hello from STM32F103!\\r\\n\");\n    for (unsigned n = 1;; n++) {\n        puts_(\"count = \"); putu(n * n); puts_(\"\\r\\n\");\n        for (volatile unsigned i = 0; i < 200000; i++);\n    }\n}\n", "b64": "AFAAIDMBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nCLUKSgtLC0mLQgfTACEKSwtKk0IH0wDwJPj+51L4BAtD+AQL8OdD+AQb8ucAv1wCAAgAAAAgAAAAIAAAACAAAAAgBkoBOBD4AT8DuXBH0vgAGAkG+9XC+AQ49OcAvwAwAUAt6f9BIUoiTpNpIkhD9IBDk2FFI8b4CDhC8ggDxvgMOP/33v8BJRxP3/hwgDhG//fX/wGqACSWRk/wCgwF+wXzs/v88Az7EDEwMQL4ARsZRgkpA0YE8QEE8tgBPB74BDDW+AAoEgb71cb4BDgALPTRQEb/97X/CkoAlACbk0IB2QE10+cAmwEzAJP25wAQAkAAMAFAOAIACFACAAhNAgAIPw0DAEhlbGxvIGZyb20gU1RNMzJGMTAzIQ0KAGNvdW50ID0gAAAAAA=="}, {"id": "adc", "title": "ADC + potentiometer (PA1)", "src": "#define RCC_APB2ENR (*(volatile unsigned *)0x40021018)\n#define GPIOA_CRL   (*(volatile unsigned *)0x40010800)\n#define GPIOA_BSRR  (*(volatile unsigned *)0x40010810)\n#define ADC1_SR     (*(volatile unsigned *)0x40012400)\n#define ADC1_CR2    (*(volatile unsigned *)0x40012408)\n#define ADC1_SQR3   (*(volatile unsigned *)0x40012434)\n#define ADC1_DR     (*(volatile unsigned *)0x4001244C)\n#define USART1_SR   (*(volatile unsigned *)0x40013800)\n#define USART1_DR   (*(volatile unsigned *)0x40013804)\n#define USART1_BRR  (*(volatile unsigned *)0x40013808)\n#define USART1_CR1  (*(volatile unsigned *)0x4001380C)\n\nstatic void tx(char c) { while (!(USART1_SR & 0x80)); USART1_DR = c; }\nstatic void say(const char *s) { while (*s) tx(*s++); }\nstatic void num(unsigned v) { char b[6]; int i = 0; do { b[i++] = '0' + v % 10; v /= 10; } while (v); while (i) tx(b[--i]); }\n\nint main(void) {\n    RCC_APB2ENR |= (1u << 2) | (1u << 9) | (1u << 14);          /* GPIOA, ADC1, USART1 */\n    GPIOA_CRL = (GPIOA_CRL & ~0x00F000F0u) | (0x2u << 20);          /* PA1 analog, PA5 output */\n    USART1_BRR = 69; USART1_CR1 = (1u << 13) | (1u << 3);\n    ADC1_CR2 = 1; ADC1_CR2 |= 4; while (ADC1_CR2 & 4);          /* power up + calibrate */\n    ADC1_SQR3 = 1;                                              /* channel 1 = PA1      */\n    say(\"ADC demo: wire a potentiometer SIG pin to PA1\\r\\n\");\n    for (;;) {\n        ADC1_CR2 |= (1u << 22);                                 /* start conversion */\n        while (!(ADC1_SR & 2));\n        unsigned v = ADC1_DR;\n        say(\"ADC1 = \"); num(v); say(\"\\r\\n\");\n        GPIOA_BSRR = v > 2048 ? (1u << 5) : (1u << 21);         /* LED on above half scale */\n        for (volatile unsigned i = 0; i < 120000; i++);\n    }\n}\n", "b64": "AFAAIDMBAAgxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAxAQAIMQEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADEBAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAxAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7nCLUKSgtLC0mLQgfTACEKSwtKk0IH0wDwJPj+51L4BAtD+AQL8OdD+AQb8ucAv9gCAAgAAAAgAAAAIAAAACAAAAAgBkoBOBD4AT8DuXBH0vgAGAkG+9XC+AQ49OcAvwAwAUA6Si3p8EOTaTlMQ/SEQ0PwBAOTYaL1iDLS+AA4hbAj8PATQ/QAE8L4ADhFIjFLw/gIKELyCALD+AwoASPE+Ag01PgINEPwBAPE+Ag01PgINFgH+9QBIyhIxPg0NP/3wP8mTyRO3/iYgNT4CDRD9IADxPgINNT4ADSZB/vV1PhMlDhG//et/wKqS0YAJZZGT/AKDLP7/PAM+xAxMDEC+AEbGUYJKQNGBfEBBfLYAT0e+AUw1vgAKBIG+9XG+AQ4AC300UBG//eM/7n1AG+Uv0/0ABIgIgtLw/gQKAtKAZUBm5NCwdgBmwEzAZP45wAQAkAAIAFAADABQKACAAjQAgAIzQIACAAAAUC/1AEAQURDIGRlbW86IHdpcmUgYSBwb3RlbnRpb21ldGVyIFNJRyBwaW4gdG8gUEExDQoAQURDMSA9IAA="}];
+const $=i=>document.getElementById(i),cv=$('cv'),BID='bluepill',G=20,snap=v=>Math.round(v/G)*G;
+// ---------- board pins (all on the 20 px grid)
+const L=['PB12','PB13','PB14','PB15','PA8','PA9','PA10','PA11','PA12','PA15','PB3','PB4','PB5','PB6','PB7','PB8','PB9','5V','GND','3V3'];
+const R=['GND','GND','3V3','RST','PB11','PB10','PB1','PB0','PA7','PA6','PA5','PA4','PA3','PA2','PA1','PA0','PC15','PC14','PC13','VB'];
+const cl={},sn={},BN=[];[...L,...R].forEach(l=>cl[l]=(cl[l]||0)+1);
+const mk=(l,i,x,side)=>BN.push({id:cl[l]>1?l+'.'+(sn[l]=(sn[l]||0)+1):l,l,x,y:60+i*G,side});
+L.forEach((l,i)=>mk(l,i,60,'l'));R.forEach((l,i)=>mk(l,i,180,'r'));
+const base=n=>n.replace(/\.\d$/,'');
+// ---------- parts: pin coordinates are multiples of 20 from the part origin
+const D={led:{t:'wokwi-led',pins:{C:[0,60],A:[20,60]},box:[-14,-8,48,74]},res:{t:'wokwi-resistor',pins:{'1':[0,0],'2':[80,0]},box:[-6,-14,92,28]},
+ btn:{t:'wokwi-pushbutton',pins:{'1.l':[0,0],'1.r':[60,0],'2.l':[0,40],'2.r':[60,40]},box:[-8,-12,76,64]},pot:{t:'wokwi-potentiometer',pins:{GND:[0,80],SIG:[20,80],VCC:[40,80]},box:[-18,-26,76,112]}};
+const CAT=[['led','LED','Output'],['res','Resistor','Passive'],['btn','Pushbutton','Input'],['pot','Potentiometer','Input']];
+const COL={green:'#2ecc71',red:'#e84a5f',blue:'#3b9dff',yellow:'#f4d03f',orange:'#ff9f1c',purple:'#b57bff',black:'#6b7686',gray:'#9aa0a6',white:'#f2f2f2'};
+const LC={red:'#ff3b3b',green:'#35e06b',blue:'#4aa3ff',yellow:'#ffd400',white:'#ffffff'};
+let parts=[{id:'btn1',type:'btn',x:360,y:100,rot:0,attrs:{color:'green'},down:false},{id:'led1',type:'led',x:360,y:240,rot:0,attrs:{color:'red'}}],
+wires=[['led1:A',BID+':PA5','green'],['led1:C',BID+':GND.3','black'],['btn1:1.l',BID+':PA0','blue'],['btn1:2.l',BID+':GND.2','black']],
+S={},pend=null,dragFrom=null,cur=[0,0],sel=null,drag=null,dragH=null,run=false,building=false,CAN=false,ver=1,lvv=-1,rq=0,cnt=5,fileTab='c',view='split',barKey='',skipJson=false,M=null,FW=null,simT=0,tickC0=0,tickClk=8e6,fwTimer=0,spd=1,sbuf='',rx='',LA={};
+const LV=[0,1,2].map(()=>new Int8Array(16));
+const part=id=>parts.find(t=>t.id==id);
+const locked=()=>run;
+function rotv(v,r){r=((r||0)%4+4)%4;return[[v[0],v[1]],[-v[1],v[0]],[-v[0],-v[1]],[v[1],-v[0]]][r]}
+function pinGeo(n){const i=n.indexOf(':'),id=n.slice(0,i),pin=n.slice(i+1);
+ if(id==BID){const b=BN.find(q=>q.id==pin);return b?{p:[b.x,b.y],d:[b.side=='l'?-1:1,0]}:null}
+ const t=part(id);if(!t)return null;const d=D[t.type],q=d.pins[pin];if(!q)return null;const bx=d.box,c=[bx[0]+bx[2]/2,bx[1]+bx[3]/2],v=[q[0]-c[0],q[1]-c[1]],r=rotv(q,t.rot);
+ const dir=Math.abs(v[0])/bx[2]>Math.abs(v[1])/bx[3]?[Math.sign(v[0]),0]:[0,Math.sign(v[1])];return{p:[t.x+r[0],t.y+r[1]],d:rotv(dir,t.rot)}}
+// ---------- right-angle wire routing
+function route2(p0,d0,p1,d1,m,idx){const s=G,A=[p0[0]+d0[0]*s,p0[1]+d0[1]*s],B=p1?[p1[0]+d1[0]*s,p1[1]+d1[1]*s]:null;let pts=[p0,A],mid=null;
+ if(!B){pts.push(d0[0]?[cur[0],A[1]]:[A[0],cur[1]],cur);return{pts}}
+ const h0=d0[0]!=0,h1=d1[0]!=0,j=((idx||0)%3-1)*G;
+ if(h0&&h1){const x=m!=null?m:(d0[0]==d1[0]?(d0[0]>0?Math.max(A[0],B[0])+s:Math.min(A[0],B[0])-s):snap((A[0]+B[0])/2)+j);pts.push([x,A[1]],[x,B[1]]);mid={axis:'x',v:x,hp:[x,(A[1]+B[1])/2]}}
+ else if(!h0&&!h1){const y=m!=null?m:(d0[1]==d1[1]?(d0[1]>0?Math.max(A[1],B[1])+s:Math.min(A[1],B[1])-s):snap((A[1]+B[1])/2)+j);pts.push([A[0],y],[B[0],y]);mid={axis:'y',v:y,hp:[(A[0]+B[0])/2,y]}}
+ else if(h0){if((B[0]-A[0])*d0[0]>=0)pts.push([B[0],A[1]]);else{const y=snap((A[1]+B[1])/2)+j;pts.push([A[0],y],[B[0],y]);mid={axis:'y',v:y,hp:[(A[0]+B[0])/2,y]}}}
+ else{if((B[1]-A[1])*d0[1]>=0)pts.push([A[0],B[1]]);else{const x=snap((A[0]+B[0])/2)+j;pts.push([x,A[1]],[x,B[1]]);mid={axis:'x',v:x,hp:[x,(A[1]+B[1])/2]}}}
+ pts.push(B,p1);const o=[];for(const p of pts){const l=o[o.length-1];if(l&&l[0]==p[0]&&l[1]==p[1])continue;o.push(p)}
+ for(let i=o.length-2;i>0;i--){const a=o[i-1],b=o[i],c=o[i+1];if((a[0]==b[0]&&b[0]==c[0])||(a[1]==b[1]&&b[1]==c[1]))o.splice(i,1)}
+ return{pts:o,mid}}
+function wireRoute(w,i){const a=pinGeo(w[0]),b=pinGeo(w[1]);return a&&b?route2(a.p,a.d,b.p,b.d,w.m,i):null}
+const pathOf=pts=>'M'+pts.map(p=>p[0]+' '+p[1]).join('L');
+// ---------- electrical model
+function nodes(){const a=BN.map(b=>BID+':'+b.id);parts.forEach(t=>Object.keys(D[t.type].pins).forEach(k=>a.push(t.id+':'+k)));return a}
+function netf(){const p={};const f=x=>{p[x]=p[x]||x;while(p[x]!==x){p[x]=p[p[x]]||p[x];x=p[x]}return x},u=(a,b)=>{p[f(a)]=f(b)};
+ wires.forEach(w=>u(w[0],w[1]));BN.forEach(b=>{if(['GND','3V3','5V'].includes(b.l))u(BID+':'+b.id,BID+':'+b.l)});
+ parts.forEach(t=>{if(t.type=='res')u(t.id+':1',t.id+':2');if(t.type=='btn'){u(t.id+':1.l',t.id+':1.r');u(t.id+':2.l',t.id+':2.r');if(t.down)u(t.id+':1.l',t.id+':2.l')}});return f}
+function sense(f,n){const r=f(n),o={hi:0,lo:0,an:null,lvl:0};
+ nodes().forEach(m=>{if(f(m)!=r)return;
+  if(m.startsWith(BID+':')){const l=base(m.slice(BID.length+1));if(l=='GND')o.lo=1;else if(l=='3V3'||l=='5V'){o.hi=1;o.lvl=1}else{const s=S[l];if(s&&s.m=='OUTPUT'){const v=s.pw!=null?s.pw:s.o;if(v>0){o.hi=1;o.lvl=Math.max(o.lvl,v)}else o.lo=1}}}
+  else if(m.endsWith(':SIG')){const t=part(m.split(':')[0]);if(t&&t.type=='pot')o.an=t.val??2048}});return o}
+function aread(p){const o=sense(netf(),BID+':'+p);return o.an!=null?o.an:o.hi?4095:0}
+function ledB(f,t){const a=sense(f,t.id+':A'),c=sense(f,t.id+':C');return a.hi&&c.lo?Math.max(.2,a.lvl):0}
+// ---------- drawing
+const pn=(p,i)=>'P'+'ABC'[p]+i;
+function bandsOf(v){const c=['#000','#7a4a1a','#e03030','#ff8c1a','#f4d03f','#2ecc71','#3b9dff','#b57bff','#888','#fff'];const s=String(Math.round(v)),d=s.length<2?s+'0':s;return[c[+d[0]],c[+d[1]],c[Math.max(0,s.length-2)]]}
+function boardSvg(){const s13=S.PC13,on13=s13&&s13.m=='OUTPUT'&&!s13.o;
+ let h=`<rect x="36" y="30" width="168" height="440" rx="8" fill="#1b4fa3" stroke="#0e2f66" stroke-width="2"/><rect x="96" y="6" width="48" height="30" rx="3" fill="#c8ccd2"/><rect x="104" y="6" width="32" height="12" fill="#8a8f98"/>
+<rect x="48" y="50" width="24" height="400" rx="2" fill="#15181d"/><rect x="168" y="50" width="24" height="400" rx="2" fill="#15181d"/>
+<circle cx="120" cy="96" r="11" fill="#dcdcdc"/><circle cx="120" cy="96" r="7" fill="#444"/><text x="120" y="120" fill="#cfe" font-size="7" text-anchor="middle" font-family="monospace">RESET</text>
+<rect x="104" y="140" width="32" height="10" fill="#222"/><rect x="108" y="142" width="7" height="6" fill="#e6c200"/><rect x="125" y="142" width="7" height="6" fill="#e6c200"/><text x="120" y="162" fill="#cfe" font-size="7" text-anchor="middle" font-family="monospace">BOOT0/1</text>
+<rect x="94" y="196" width="52" height="52" rx="3" fill="#161616"/><circle cx="102" cy="204" r="2.5" fill="#555"/><text transform="translate(126 240) rotate(-90)" fill="#cfcfcf" font-size="8.5" font-family="monospace">STM32F103C8T6</text>
+<rect x="104" y="282" width="32" height="12" rx="6" fill="#b9bec6"/><rect x="104" y="320" width="9" height="6" fill="#d9c27a"/><rect x="128" y="320" width="9" height="6" fill="#d9c27a"/>
+<rect x="114" y="428" width="12" height="8" fill="${on13?'#ffd400':'#6b6b2a'}"/>${on13?'<circle cx="120" cy="432" r="14" fill="#ffd400" opacity=".3"/>':''}<text x="120" y="450" fill="#cfe" font-size="7" text-anchor="middle" font-family="monospace">PC13</text>
+<text x="120" y="372" fill="#9fc0f0" font-size="9" text-anchor="middle" font-family="sans-serif" font-weight="700">Blue Pill</text>`;
+ BN.forEach(b=>{h+=`<text x="${b.side=='l'?b.x+10:b.x-10}" y="${b.y+3}" fill="#e8eefc" font-size="7.5" text-anchor="${b.side=='l'?'start':'end'}" font-family="monospace">${b.l}</text>`});return h}
+function partSvg(t,f){const a=t.attrs||{};let h='';
+ if(t.type=='led'){const b=ledB(f,t),c=LC[a.color]||LC.red;h=`<line x1="0" y1="30" x2="0" y2="60" stroke="#aab" stroke-width="2"/><line x1="20" y1="30" x2="20" y2="60" stroke="#aab" stroke-width="2"/>${b?`<circle cx="10" cy="14" r="32" fill="${c}" opacity="${.35*b}"/>`:''}<path d="M-8 30V10a18 18 0 0 1 36 0V30z" fill="${c}" fill-opacity="${b?.55+.45*b:.4}" stroke="#0006"/><rect x="-12" y="28" width="44" height="5" rx="1" fill="${c}" fill-opacity="${b?1:.5}"/>`}
+ if(t.type=='res'){const bands=bandsOf(+a.value||220);h=`<line x1="0" y1="0" x2="80" y2="0" stroke="#aab" stroke-width="2"/><rect x="16" y="-9" width="48" height="18" rx="8" fill="#d8b98a"/>`+bands.map((c,i)=>`<rect x="${24+i*8}" y="-9" width="4" height="18" fill="${c}"/>`).join('')+`<rect x="56" y="-9" width="3" height="18" fill="#c9a000"/>`}
+ if(t.type=='btn'){const c=({green:'#2ecc71',red:'#e84a5f',blue:'#3b9dff',yellow:'#f4d03f',white:'#eee',black:'#333'})[a.color]||'#2ecc71';h=`<path d="M0 0H8M52 0H60M0 40H8M52 40H60" stroke="#aab" stroke-width="2"/><rect x="6" y="-8" width="48" height="56" rx="4" fill="#d9dce1" stroke="#8a8f98"/><circle class="cap" data-b="${t.id}" cx="30" cy="20" r="${t.down?13:15}" fill="${t.down?'#1f9e52':c}" stroke="#0007" stroke-width="2" style="cursor:pointer"/>`}
+ if(t.type=='pot'){const v=t.val??2048,an=Math.PI*(.75+1.5*v/4095);h=`<path d="M0 60V80M20 60V80M40 60V80" stroke="#aab" stroke-width="2"/><rect x="-14" y="-22" width="68" height="82" rx="6" fill="#2f5fb3"/><circle cx="20" cy="20" r="24" fill="#d0d4da" stroke="#777"/><line x1="20" y1="20" x2="${20+20*Math.cos(an)}" y2="${20+20*Math.sin(an)}" stroke="#222" stroke-width="3"/>`}
+ return h}
+function draw(){ver++;const f=netf();let h=boardSvg(),cnts={};
+ wires.forEach(w=>{cnts[w[0]]=(cnts[w[0]]||0)+1;cnts[w[1]]=(cnts[w[1]]||0)+1});
+ wires.forEach((w,i)=>{const r=wireRoute(w,i);if(!r)return;const d=pathOf(r.pts),s=sel&&sel.k=='w'&&sel.i==i;if(s)h+=`<path d="${d}" stroke="#fff" stroke-width="8" fill="none" opacity=".3" stroke-linejoin="round"/>`;
+  h+=`<path data-w="${i}" d="${d}" stroke="${COL[w[2]]||w[2]||'#2ecc71'}" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round" style="cursor:pointer"/>`;
+  if(s&&r.mid&&!locked())h+=`<rect data-h="${i}" x="${r.mid.hp[0]-6}" y="${r.mid.hp[1]-6}" width="12" height="12" rx="2" fill="#fff" stroke="#2f6fed" stroke-width="2" style="cursor:${r.mid.axis=='x'?'ew':'ns'}-resize"/>`});
+ parts.forEach(t=>{const d=D[t.type],s=sel&&sel.k=='p'&&sel.id==t.id,bx=d.box;
+  h+=`<g data-p="${t.id}" transform="translate(${t.x},${t.y}) rotate(${(t.rot||0)*90})" style="cursor:${locked()?'default':'move'}"><rect x="${bx[0]}" y="${bx[1]}" width="${bx[2]}" height="${bx[3]}" fill="transparent"${s?' stroke="#3ddc97" stroke-dasharray="4 3" rx="4"':''}/>${partSvg(t,f)}</g>`;
+  const c=rotv([bx[0]+bx[2]/2,bx[1]+bx[3]/2],t.rot),ex=(t.rot%2?bx[3]:bx[2])/2,ey=(t.rot%2?bx[2]:bx[3])/2;
+  h+=`<text x="${t.x+c[0]}" y="${t.y+c[1]-ey-5}" fill="#8fa0b5" font-size="9" text-anchor="middle" font-family="monospace">${t.id}${t.type=='res'?' '+(t.attrs.value||220)+'Ω':''}</text>`});
+ const all=BN.map(b=>[BID+':'+b.id,b.x,b.y,b.l]);parts.forEach(t=>Object.keys(D[t.type].pins).forEach(k=>{const p=pinGeo(t.id+':'+k).p;all.push([t.id+':'+k,p[0],p[1],k])}));
+ if(pend){const g=pinGeo(pend);if(g){const r=route2(g.p,g.d,null,null);h+=`<path d="${pathOf(r.pts)}" stroke="#7fb0ff" stroke-width="2.5" stroke-dasharray="6 5" fill="none" pointer-events="none"/>`}}
+ all.forEach(([n,x,y,l])=>{const c=cnts[n]||0;h+=`<rect class="pin" data-n="${n}" x="${x-4.5}" y="${y-4.5}" width="9" height="9" rx="1.5" fill="${pend==n?'#fff':c?'#ffd166':'#d9b56a'}" stroke="#222"><title>${l}</title></rect>`+(c>1?`<circle cx="${x}" cy="${y}" r="3.2" fill="#111" pointer-events="none"/>`:'')});
+ cv.innerHTML=h;bar();if(fileTab=='json'&&!skipJson)setCode(JSON.stringify(toDiagram(),null,2));skipJson=false;laSample()}
+function rdraw(){if(!rq)rq=requestAnimationFrame(()=>{rq=0;draw()})}
+function toDiagram(){return{version:1,author:'PinForge',editor:'wokwi',parts:[{type:'board-stm32-bluepill',id:BID,top:0,left:0,attrs:{}}].concat(parts.map(t=>({type:D[t.type].t,id:t.id,top:t.y,left:t.x,...(t.rot?{rotate:t.rot*90}:{}),attrs:{...(t.attrs||{})}}))),connections:wires.map(w=>[w[0],w[1],w[2]||'green',[]]),serialMonitor:{display:'terminal'}}}
+function applyDiagram(d){const T=Object.fromEntries(Object.entries(D).map(([k,v])=>[v.t,k]));const np=[];
+ (d.parts||[]).forEach(q=>{const k=T[q.type];if(k)np.push({id:q.id,type:k,x:snap(q.left||0),y:snap(q.top||0),rot:(((q.rotate||0)/90|0)%4+4)%4,attrs:q.attrs||{},val:2048,down:false})});
+ const ok=n=>n.startsWith(BID+':')||np.some(t=>n.startsWith(t.id+':'));parts=np;wires=(d.connections||[]).filter(c=>ok(c[0])&&ok(c[1])).map(c=>[c[0],c[1],c[2]||'green']);sel=null;draw()}
+// ---------- inspector
+function bar(){const key=JSON.stringify(sel)+parts.length+wires.length+(sel&&sel.k=='w'&&wires[sel.i]?wires[sel.i][2]:'')+locked();if(key==barKey)return;barKey=key;let h='';const dis=locked()?' disabled':'';
+ if(sel&&sel.k=='p'&&part(sel.id)){const t=part(sel.id),a=t.attrs||(t.attrs={});h=`<b>${t.id}</b><span>${D[t.type].t}</span>`;
+  if(t.type=='led')h+=`<select data-a="color"${dis}>${Object.keys(LC).map(c=>`<option${a.color==c?' selected':''}>${c}</option>`).join('')}</select>`;
+  if(t.type=='res')h+=`<input type="number" min="1" data-a="value" value="${a.value||220}" style="width:80px"${dis}> Ω`;
+  if(t.type=='btn')h+=`<select data-a="color"${dis}>${['green','red','blue','yellow','white','black'].map(c=>`<option${a.color==c?' selected':''}>${c}</option>`).join('')}</select>`;
+  if(t.type=='pot')h+=`<input type="range" min="0" max="4095" value="${t.val??2048}" data-v="1" title="Turn the knob (works while running)">`;
+  h+=`<button data-act="rot"${dis}>Rotate (R)</button><button data-act="del"${dis}>Delete</button>`}
+ else if(sel&&sel.k=='w'&&wires[sel.i]){h=`<b>wire</b>`+Object.keys(COL).map(c=>`<button class="sw" data-wc="${c}" title="${c}" style="background:${COL[c]}"${dis}></button>`).join('')+`<button data-act="del"${dis}>Delete</button><span>drag the square handle to move the bend</span>`}
+ else h=locked()?'The circuit is locked while the simulation runs. You can still press buttons and turn potentiometers.':'Select a part or wire to edit it · + adds parts · Delete removes · R rotates';$('insp').innerHTML=h}
+function delSel(){if(locked()||!sel)return;if(sel.k=='w')wires.splice(sel.i,1);else{const id=sel.id;parts=parts.filter(t=>t.id!=id);wires=wires.filter(w=>!w[0].startsWith(id+':')&&!w[1].startsWith(id+':'))}sel=null;draw()}
+function rotSel(){if(locked()||!sel||sel.k!='p')return;const t=part(sel.id);t.rot=((t.rot||0)+1)%4;draw()}
+$('insp').addEventListener('click',e=>{const g=e.target;if(g.dataset.act=='del')delSel();if(g.dataset.act=='rot')rotSel();if(g.dataset.wc&&sel&&!locked()){wires[sel.i][2]=g.dataset.wc;draw()}});
+$('insp').addEventListener('input',e=>{const g=e.target,t=sel&&sel.k=='p'&&part(sel.id);if(!t)return;if(g.dataset.v){t.val=+g.value;draw();return}if(locked())return;if(g.dataset.a){(t.attrs=t.attrs||{})[g.dataset.a]=g.value;draw()}});
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key=='Enter'){e.preventDefault();doRun();return}if((e.ctrlKey||e.metaKey)&&(e.key=='b'||e.key=='B')){e.preventDefault();doBuild();return}
+ if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||!sel)return;if(e.key=='Delete'||e.key=='Backspace'){e.preventDefault();delSel()}if((e.key=='r'||e.key=='R'))rotSel();if(e.key=='Escape'){sel=null;pend=null;draw()}});
+// ---------- canvas interaction (editing is blocked while running)
+const pt=e=>{const m=cv.getScreenCTM();if(!m)return[0,0];const q=cv.createSVGPoint();q.x=e.clientX;q.y=e.clientY;const r=q.matrixTransform(m.inverse());return[r.x,r.y]};
+function addWire(a,b){if(a==b||wires.some(w=>(w[0]==a&&w[1]==b)||(w[0]==b&&w[1]==a)))return;wires.push([a,b,'green'])}
+cv.addEventListener('pointerdown',e=>{const g=e.target,n=g.dataset.n;cur=pt(e);
+ if(g.dataset.b){const t=part(g.dataset.b);t.down=true;sel={k:'p',id:t.id};draw();return}
+ if(n){if(locked())return;if(pend&&pend!=n){addWire(pend,n);pend=null}else{pend=n;dragFrom=n}draw();return}
+ if(g.dataset.h!==undefined){if(!locked())dragH=+g.dataset.h;return}
+ if(g.dataset.w!==undefined){if(!locked()){sel={k:'w',i:+g.dataset.w};pend=null;draw()}return}
+ const pg=g.closest('[data-p]');if(pg){const t=part(pg.dataset.p);sel={k:'p',id:t.id};pend=null;if(!locked())drag={t,dx:cur[0]-t.x,dy:cur[1]-t.y};draw();return}
+ sel=null;pend=null;draw()});
+cv.addEventListener('pointermove',e=>{cur=pt(e);if(dragH!==null){const w=wires[dragH],r=wireRoute(w,dragH);if(r&&r.mid){w.m=snap(r.mid.axis=='x'?cur[0]:cur[1]);draw()}}else if(drag){drag.t.x=snap(cur[0]-drag.dx);drag.t.y=snap(cur[1]-drag.dy);draw()}else if(pend)draw()});
+addEventListener('pointerup',e=>{if(dragFrom){const el=document.elementFromPoint(e.clientX,e.clientY),n=el&&el.dataset&&el.dataset.n;if(n&&n!=dragFrom&&!locked()){addWire(dragFrom,n);pend=null}dragFrom=null;draw()}drag=null;dragH=null;parts.forEach(t=>{if(t.down){t.down=false;draw()}})});
+// ---------- parts menu (+)
+function menu(){const q=$('q').value.toLowerCase();$('pl').innerHTML=CAT.filter(c=>(c[1]+c[2]).toLowerCase().includes(q)).map(c=>`<button data-add="${c[0]}">${c[1]}<span>${c[2]}</span></button>`).join('')||'<div style="padding:6px;color:var(--mu)">No parts found</div>'}
+$('plus').onclick=e=>{e.stopPropagation();if(locked())return;$('pmenu').classList.toggle('on');$('q').value='';menu();$('q').focus()};
+$('pmenu').addEventListener('click',e=>e.stopPropagation());$('q').addEventListener('input',menu);addEventListener('click',()=>$('pmenu').classList.remove('on'));
+$('pl').addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(!b||locked())return;const ty=b.dataset.add,id=ty+(++cnt);parts.push({id,type:ty,x:380+(cnt%2)*40,y:80+(cnt%5)*80,rot:0,val:2048,attrs:ty=='led'?{color:'red'}:ty=='res'?{value:'220'}:ty=='btn'?{color:'green'}:{}});sel={k:'p',id};$('pmenu').classList.remove('on');draw()});
+// ---------- editor
+function hl(s){s=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+ return s.replace(/(\/\/.*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(#define|#include|\b(?:function|let|const|var|if|else|for|while|return|break|continue|new|true|false|null|int|unsigned|char|void|static|volatile|typedef|struct|sizeof|uint32_t|uint8_t|uint16_t)\b)|\b(P[A-C]\d{1,2}|GPIO[A-C]|RCC|EXTI|AFIO|TIM[2-4]|USART[1-3]|ADC1)\b|\b(0x[0-9a-fA-F]+|\d+(?:\.\d+)?)\b/g,(m,a,b,c,d,e)=>`<span class="c${a?1:b?2:c?3:d?5:6}">${m}</span>`)+'\n'}
+function setCode(v){$('code').value=v;sync()}
+function sync(){const v=$('code').value;$('hl').innerHTML=hl(v);$('gut').textContent=Array.from({length:v.split('\n').length},(_,i)=>i+1).join('\n')}
+const csrc=()=>FW&&FW.src!=null?FW.src:'/* Custom firmware: '+(FW?FW.name:'none')+'\n   No source is available for loaded binaries.\n   Initial SP: 0x'+(FW?new DataView(FW.bytes.buffer).getUint32(0,true).toString(16):'-')+'\n   Reset vector: 0x'+(FW?new DataView(FW.bytes.buffer).getUint32(4,true).toString(16):'-')+' */';
+function codeEditable(){return fileTab=='c'?(CAN&&FW&&FW.src!=null&&!building):!run}
+function showFile(t){fileTab=t;document.querySelectorAll('.ftabs span').forEach(x=>x.classList.toggle('a',x.dataset.f==t));if(t=='c')setCode(csrc());else draw();$('code').readOnly=!codeEditable();noteUpdate()}
+document.querySelectorAll('.ftabs span').forEach(s=>s.onclick=()=>showFile(s.dataset.f));
+$('code').addEventListener('input',()=>{if(fileTab=='c'){if(CAN&&FW&&FW.src!=null){FW.src=$('code').value;FW.dirty=true;chips()}}else if(!run){try{skipJson=true;applyDiagram(JSON.parse($('code').value))}catch(e){skipJson=false}}sync()});
+$('code').addEventListener('scroll',()=>{$('gut').scrollTop=$('hl').scrollTop=$('code').scrollTop;$('hl').scrollLeft=$('code').scrollLeft});
+function noteUpdate(){$('note').textContent=fileTab=='json'?(run?'Read-only while the simulation runs.':'Wokwi-style circuit description — edits update the circuit.'):CAN?(FW&&FW.src!=null?'Edit main.c, press Build (Ctrl+B), then Run (Ctrl+Enter). Build compiles with arm-none-eabi-gcc; Run starts the last build.':'Loaded binary — no source. Press Run.'):'No compile server connected: examples and loaded .bin/.elf/.hex files run, but editing needs the hosted compile server.'}
+// ---------- tabs & layout
+function setView(v){if(matchMedia('(max-width:900px)').matches&&v=='split')v='circuit';view=v;$('work').dataset.v=v;document.querySelectorAll('#views .tb').forEach(b=>b.classList.toggle('a',b.dataset.v==v));setTimeout(()=>{laDraw()},30)}
+document.querySelectorAll('#views .tb').forEach(b=>b.onclick=()=>setView(b.dataset.v));addEventListener('resize',()=>setView(view));
+function setDock(d){document.querySelectorAll('#dtabs .tb[data-d]').forEach(b=>b.classList.toggle('a',b.dataset.d==d));document.querySelectorAll('.dpane').forEach(p=>p.classList.toggle('a',p.id=='p-'+d));$('dock').classList.remove('min');dockT=d;if(d=='logic')setTimeout(laDraw,30);regsDraw()}
+let dockT='serial';document.querySelectorAll('#dtabs .tb[data-d]').forEach(b=>b.onclick=()=>setDock(b.dataset.d));
+$('dmin').onclick=()=>{$('dock').classList.toggle('min');$('dmin').innerHTML=$('dock').classList.contains('min')?'&#9652;':'&#9662;';setTimeout(laDraw,30)};
+// ---------- status / chips
+function chips(){const m=$('chipMode'),b=$('chipBuild');m.className='chip'+(run?' run':'');m.textContent=run?'Running · circuit locked':'Edit mode';
+ let t='Ready',c='chip';if(building){t='Building…';c='chip warn'}else if(FW&&FW.dirty){t='Source changed — press Build';c='chip warn'}else if(FW&&FW.info){t='Built · '+FW.info.size+' B';c='chip ok'}else if(FW&&FW.src==null){t='Binary loaded';c='chip ok'}
+ b.className=c;b.textContent=t;$('circPane').classList.toggle('locked',run);$('plus').disabled=run;$('plus').title=run?'Circuit is locked while running — press Stop to add parts':'Add a part';
+ $('bBuild').disabled=building||!CAN||(FW&&FW.src==null);$('bBuild').title=CAN?'Compile main.c (Ctrl+B)':'Needs the hosted compile server';$('bRun').disabled=run||building;$('bStop').disabled=!run;
+ $('stRun').textContent=run?'Running':'Stopped';$('stFlash').textContent=FW&&FW.bytes?'Flash '+(FW.info?FW.info.size:FW.used||'–')+' / 65536 B':'Flash –';$('code').readOnly=!codeEditable();$('ex').disabled=run;$('ld').disabled=run;noteUpdate();barKey='';bar()}
+// ---------- build log / serial
+const log=t=>{const c=$('con');c.textContent+=t+'\n';c.scrollTop=1e9};
+const blog=(t,reset)=>{const b=$('blog');b.textContent=(reset?'':b.textContent+'\n')+t};
+function sendSerial(){const v=$('si').value;if(!v)return;rx+=v+'\n';$('si').value='';if(M&&run){for(const ch of v+'\n')M.rxByte(0,ch.charCodeAt(0));log('> '+v)}}
+$('sb').onclick=sendSerial;$('si').addEventListener('keydown',e=>{if(e.key=='Enter')sendSerial()});
+// ---------- firmware loading & build
+function b64(s){const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+const image=()=>new Uint8Array(65536).fill(0xFF);
+function parseFw(b){const im=image();const dv=new DataView(b.buffer,b.byteOffset,b.byteLength);
+ if(b[0]==0x7f&&b[1]==0x45&&b[2]==0x4c&&b[3]==0x46){const ph=dv.getUint32(0x1C,true),es=dv.getUint16(0x2A,true),n=dv.getUint16(0x2C,true);for(let k=0;k<n;k++){const o=ph+k*es;if(dv.getUint32(o,true)!=1)continue;const off=dv.getUint32(o+4,true),pa=dv.getUint32(o+12,true),fs=dv.getUint32(o+16,true);if(pa>=0x08000000&&pa+fs<=0x08010000)im.set(b.subarray(off,off+fs),pa-0x08000000)}}
+ else if(b[0]==0x3A){const t=new TextDecoder().decode(b);let bs=0;for(const ln of t.split(/\r?\n/)){if(ln[0]!=':')continue;const len=parseInt(ln.substr(1,2),16),ad=parseInt(ln.substr(3,4),16),ty=parseInt(ln.substr(7,2),16);if(ty==4)bs=parseInt(ln.substr(9,4),16)*65536;else if(ty==0)for(let i=0;i<len;i++){const a=bs+ad+i-0x08000000;if(a>=0&&a<65536)im[a]=parseInt(ln.substr(9+i*2,2),16)}}}
+ else im.set(b.subarray(0,65536));
+ if(im.every(x=>x==0xFF))throw Error('no data in the Flash range 0x08000000–0x0800FFFF');return im}
+const API=(window.PINFORGE_API||'')+'/api';
+async function doBuild(){if(!CAN||building||!FW||FW.src==null)return;building=true;chips();setDock('build');blog('Compiling main.c with arm-none-eabi-gcc (-Os)…',true);
+ try{const r=await fetch(API+'/compile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:FW.src,opt:'Os'})}),j=await r.json();
+  if(j.log)blog(j.log);
+  if(!j.ok){blog('\nBuild failed.');$('chipBuild').className='chip err';$('chipBuild').textContent='Build failed';building=false;chips();$('chipBuild').className='chip err';$('chipBuild').textContent='Build failed';return}
+  const im=image();im.set(b64(j.bin));FW.bytes=im;FW.dirty=false;FW.info={size:j.size,text:j.text,data:j.data,bss:j.bss};blog('\nBuild OK: '+j.size+' bytes (text '+j.text+', data '+j.data+', bss '+j.bss+')'+(run?'\nStop and press Run to load the new build.':''))}
+ catch(e){blog('Build failed: could not reach the compile server ('+e.message+')')}
+ building=false;chips()}
+function doRun(){if(run||building||!FW||!FW.bytes)return;if(FW.dirty){blog('Source changed since the last build — press Build first.',false);setDock('build');chips();return}bootFw()}
+function initS(){S={};BN.forEach(b=>{if(/^P[A-C]\d+$/.test(b.l))S[b.l]={m:'INPUT',o:0,pw:null}})}
+function refreshLV(){const f=netf();for(let p=0;p<3;p++)for(let i=0;i<16;i++){const n=pn(p,i);if(!S[n]){LV[p][i]=0;continue}const o=sense(f,BID+':'+n);LV[p][i]=o.lo?0:o.hi?1:o.an!=null?(o.an>2047?1:0):2}lvv=ver}
+const simNow=()=>M?simT+(M.cy-tickC0)/tickClk:simT;
+const HOST={
+ gpio(p,i,q){const s=S[pn(p,i)];if(!s)return;let m='INPUT',o=q.odr;if(q.mode){if(q.cnf&1){if(q.odr)m='INPUT';else{m='OUTPUT';o=0}}else m='OUTPUT'}else if(q.cnf==2)m=q.odr?'INPUT_PULLUP':'INPUT';
+  s.m=m;s.o=o;if(m!='OUTPUT')s.pw=null;ver++;laSample();rdraw()},
+ pwm(p,i,d){const s=S[pn(p,i)];if(!s)return;s.pw=d;ver++;rdraw()},
+ readPin(p,i,cnf,odr){if(lvv!==ver)refreshLV();const v=LV[p][i];return v==2?(cnf==2?odr:0):v},
+ analog(ch){const n=ch<8?'PA'+ch:ch==8?'PB0':ch==9?'PB1':null;return n?aread(n):0},
+ serial(k,c){if(c==13)return;sbuf+=String.fromCharCode(c)}};
+function fwTick(){if(!M||!run)return;const w0=performance.now(),clk=M.sysclk(),want=clk*0.01;tickC0=M.cy;tickClk=clk;let n=0;M.setPin();
+ while(M.cy-tickC0<want&&!M.halted){M.step();if(!(++n&1023)){M.setPin();if(performance.now()-w0>8)break}}
+ const dc=M.cy-tickC0;simT+=dc/clk;tickC0=M.cy;spd=spd*.9+0.1*Math.min(1,(dc/clk)/0.01);
+ if(sbuf){const c=$('con');c.textContent+=sbuf;sbuf='';c.scrollTop=1e9}
+ if(M.halted){log('CPU halted: '+M.halted);stopSim()}}
+function bootFw(){initS();$('con').textContent='';rx='';sbuf='';LA={};
+ M=new CM3(HOST);M.load(FW.bytes,0x08000000);const sp=M.rd32(0x08000000),rv=M.rd32(0x08000004);
+ if(!(sp>=0x20000000&&sp<=0x20005000)||!(rv>=0x08000000&&rv<0x08010000)){log('Invalid firmware: bad vector table (SP=0x'+sp.toString(16)+', reset=0x'+rv.toString(16)+')');M=null;return}
+ simT=0;tickC0=0;spd=1;sel=sel&&sel.k=='p'?sel:null;run=true;M.reset();tickC0=M.cy;laSample();fwTimer=setInterval(fwTick,10);log('Running '+FW.name);setDock(dockT=='build'?'serial':dockT);chips();draw()}
+function stopSim(){if(!run&&!M)return;clearInterval(fwTimer);run=false;M=null;pend=null;Object.keys(S).forEach(p=>S[p]={m:'INPUT',o:0,pw:null});chips();draw()}
+$('bBuild').onclick=doBuild;$('bRun').onclick=doRun;$('bStop').onclick=()=>{if(run){stopSim();log('Simulation stopped.')}};
+function setFw(f){if(run)stopSim();FW=f;if(fileTab=='c')showFile('c');chips();$('stFlash').textContent='Flash '+(f.info?f.info.size:f.used||'–')+' / 65536 B'}
+EXS.forEach((e,i)=>{const o=document.createElement('option');o.value=i;o.textContent=e.title;$('ex').appendChild(o)});
+$('ex').onchange=()=>{const e=EXS[+$('ex').value];setFw({name:e.id+'.bin',bytes:b64(e.b64),src:e.src,dirty:false,used:b64(e.b64).length});blog('Prebuilt example — press Run, or edit and Build.',true)};
+$('ld').onclick=()=>$('fl').click();
+$('fl').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const im=parseFw(new Uint8Array(await f.arrayBuffer()));const o=document.createElement('option');o.textContent='Loaded: '+f.name;$('ex').appendChild(o);$('ex').value=$('ex').options.length-1;setFw({name:f.name,bytes:im,src:null,dirty:false,used:im.lastIndexOf?(()=>{let n=65536;while(n>0&&im[n-1]==0xFF)n--;return n})():0})}catch(e){blog('Could not load '+f.name+': '+e.message,true);setDock('build')}ev.target.value=''};
+// ---------- CPU registers tab
+const hx=v=>'0x'+(v>>>0).toString(16).padStart(8,'0');
+function regsDraw(){if(dockT!='regs')return;const el=$('regs');if(!M){el.textContent=run?'':'Not running. Press Run to see live CPU state.';return}const r=M.r;let t='';
+ for(let i=0;i<13;i+=2)t+=('R'+i).padEnd(4)+hx(r[i])+(i<12?'   '+('R'+(i+1)).padEnd(4)+hx(r[i+1]):'')+'\n';
+ t+='SP  '+hx(r[13])+'   LR  '+hx(r[14])+'\nPC  '+hx(r[15])+'   xPSR flags  N'+M.N+' Z'+M.Z+' C'+M.C+' V'+M.V+'   IPSR '+M.ipsr+'\n';
+ t+='cycles '+M.cy+'   clock '+(M.sysclk()/1e6)+' MHz   SysTick '+(M.st.ctrl&1?'on':'off')+' load '+M.st.load+'\n\n';
+ ['A','B','C'].forEach((n,p)=>{const g=M.gp[p];t+='GPIO'+n+'  CRL '+hx(g.crl)+'  CRH '+hx(g.crh)+'  ODR 0x'+g.odr.toString(16).padStart(4,'0')+'  IDR 0x'+(()=>{let v=0;for(let i=0;i<16;i++)v|=M.pinIn(p,i)<<i;return v})().toString(16).padStart(4,'0')+((M.rcc.apb2&M.gate[p])?'':'   (clock off)')+'\n'});
+ t+='\nNVIC enabled '+hx(M.nvEn[0])+' '+hx(M.nvEn[1])+'   pending '+hx(M.nvPend[0])+' '+hx(M.nvPend[1])+'   active '+(M.act.length?M.act.join(','):'none');el.textContent=t}
+// ---------- logic analyzer
+function laLevel(n){const s=S[n];if(!s)return null;if(s.m=='OUTPUT')return s.pw!=null?2:s.o;if(lvv!==ver)refreshLV();const p='ABC'.indexOf(n[1]),i=+n.slice(2),v=LV[p][i];return v==2?(s.m=='INPUT_PULLUP'?1:3):v}
+function laSample(){if(!run&&!M)return;const t=simNow();const wired=new Set();wires.forEach(w=>{[w[0],w[1]].forEach(x=>{if(x.startsWith(BID+':'))wired.add(base(x.slice(BID.length+1)))})});
+ for(const n in S){const s=S[n];if(!(s.m=='OUTPUT'||s.m=='INPUT_PULLUP'||wired.has(n)||LA[n]))continue;if(!(s.m=='OUTPUT'||s.m=='INPUT_PULLUP'||LA[n]||wired.has(n)))continue;const v=laLevel(n);if(v===null)continue;if(s.m=='INPUT'&&!LA[n]&&!wired.has(n))continue;
+  const a=LA[n]||(LA[n]=[]);if(a.length&&a[a.length-1][1]===v)continue;a.push([t,v]);if(a.length>6000)a.splice(0,2000)}}
+function laDraw(){if(dockT!='logic'||$('dock').classList.contains('min'))return;const c=$('la'),W=c.clientWidth,H=c.clientHeight;if(!W||!H)return;const dpr=devicePixelRatio||1;if(c.width!=W*dpr||c.height!=H*dpr){c.width=W*dpr;c.height=H*dpr}const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
+ const names=Object.keys(LA).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));const win=+$('laWin').value,t1=run?simNow():simT,t0=Math.max(0,t1-win),lw=64;
+ $('laInfo').textContent=names.length?names.length+' channel'+(names.length>1?'s':'')+' · t = '+t1.toFixed(3)+' s':'No pins active yet — run a program that configures GPIO pins';
+ if(!names.length){x.fillStyle='#5b6a7c';x.font='12px system-ui';x.fillText('Waveforms appear here for output pins, pulled-up inputs and wired pins.',lw,24);return}
+ const rh=Math.min(34,(H-18)/names.length);x.font='11px ui-monospace,monospace';x.lineWidth=1;
+ const step=win<=0.5?0.1:win<=2?0.5:2;x.strokeStyle='#1f2b3b';x.fillStyle='#5b6a7c';for(let g=Math.ceil(t0/step)*step;g<=t1;g+=step){const gx=lw+(g-t0)/win*(W-lw-8);x.beginPath();x.moveTo(gx,0);x.lineTo(gx,H-16);x.stroke();x.fillText(g.toFixed(step<1?1:0)+'s',gx+2,H-4)}
+ names.forEach((n,k)=>{const y0=6+k*rh,hi=y0+4,lo=y0+rh-8;x.fillStyle='#9fb6d6';x.fillText(n,6,y0+rh/2+3);const a=LA[n];let lv=null;for(const e of a){if(e[0]<=t0)lv=e[1];else break}
+  const px=t=>lw+(t-t0)/win*(W-lw-8),py=v=>v==1?hi:v==0?lo:(hi+lo)/2;x.strokeStyle=S[n]&&S[n].m=='OUTPUT'?'#7dff9a':'#3bf0c0';x.lineWidth=2;x.beginPath();let cx=lw,cv0=lv===null?a.length?a[0][1]:0:lv;x.moveTo(cx,py(cv0));
+  for(const e of a){if(e[0]<=t0)continue;if(e[0]>t1)break;const ex=px(e[0]);x.lineTo(ex,py(cv0));x.lineTo(ex,py(e[1]));cv0=e[1]}x.lineTo(W-8,py(cv0));x.stroke()});}
+$('laWin').onchange=laDraw;
+setInterval(()=>{if(run){const s=simT;$('tm').textContent=String(s/60|0).padStart(2,'0')+':'+(s%60).toFixed(3).padStart(6,'0');$('stRun').textContent='Running · '+Math.round(spd*100)+'% · '+Math.round(M.sysclk()/1e6)+' MHz';regsDraw();laDraw()}else if(M===null){}},120);
+// ---------- start-up
+const e0=EXS[0];FW={name:e0.id+'.bin',bytes:b64(e0.b64),src:e0.src,dirty:false,used:b64(e0.b64).length};
+setCode(FW.src);setView('split');showFile('c');setDock('serial');initS();draw();chips();
+fetch(API+'/health').then(r=>r.json()).then(j=>{if(j&&j.ok){CAN=true;chips();noteUpdate()}}).catch(()=>{});
+</script></body></html>
